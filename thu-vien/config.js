@@ -47,7 +47,9 @@ window.LIBRARY_CONFIG = {
     // Đã điền NanaBase thì phần Firebase bên dưới được bỏ qua. Xem file HUONG-DAN-NANABASE.txt
     nanabase: {
       url: "",
-      prefix: "tv_"          // tiền tố tên bộ sưu tập, giữ nguyên trừ khi chạy nhiều thư viện trên cùng máy chủ
+      prefix: "tv_",         // tiền tố tên bộ sưu tập, giữ nguyên trừ khi chạy nhiều thư viện trên cùng máy chủ
+      realtime: "auto"       // "auto": cập nhật tức thì, tự chuyển sang hỏi định kỳ 5 giây/lần nếu đường truyền chặn
+                             // "poll": luôn hỏi định kỳ (dùng khi chạy qua Cloudflare Quick Tunnel)
     },
 
     // ===== MÁY CHỦ FIREBASE (cách cũ, chỉ dùng khi không điền NanaBase) =====

@@ -18,7 +18,8 @@
 
   function op(name, extra) { return Object.assign({ $op: name }, extra || {}); }
 
-  function App(baseUrl) {
+  function App(baseUrl, options) {
+    options = options || {};
     const base = String(baseUrl || (global.location ? global.location.origin : '')).replace(/\/+$/, '');
     const key = 'nanabase:' + base;
     const app = this;
@@ -150,24 +151,59 @@
     this.collection = function (name) { return new Collection(name); };
 
     // Kết nối thời gian thực: MỘT kết nối dùng chung cho mọi bộ sưu tập đang theo dõi
-    // (trình duyệt chỉ mở được khoảng 6 kết nối tới cùng máy chủ, nên không mở mỗi bộ sưu tập một kết nối)
+    // (trình duyệt chỉ mở được khoảng 6 kết nối tới cùng máy chủ, nên không mở mỗi bộ sưu tập một kết nối).
+    // Nếu kết nối thời gian thực bị chặn (ví dụ Cloudflare Quick Tunnel), tự chuyển sang hỏi định kỳ.
     const watchers = {};
-    let es = null, esKey = '', esTimer = null;
+    const rt = { mode: options.realtime === 'poll' ? 'poll' : 'auto', pollMs: Math.max(2000, options.pollMs || 5000) };
+    let es = null, esKey = '', esTimer = null, readyTimer = null, pollTimer = null, pollSeq = null, polling = rt.mode === 'poll';
+    function dispatch(ev) {
+      const set = watchers[ev.collection];
+      if (set) set.forEach(function (sub) { try { sub.cb(ev); } catch (x) { console.error(x); } });
+    }
     function reopenStream() { clearTimeout(esTimer); esTimer = setTimeout(openStream, 30); }
-    function openStream() {
-      const cols = Object.keys(watchers).filter(function (c) { return watchers[c].size; }).sort();
-      const k = cols.join(',') + '|' + (token || '');
-      if (es && k === esKey) return;
+    function watchedCols() { return Object.keys(watchers).filter(function (c) { return watchers[c].size; }).sort(); }
+    function startPolling() {
+      polling = true;
       if (es) { es.close(); es = null; }
+      clearTimeout(readyTimer);
+      clearTimeout(pollTimer);
+      pollSeq = null;
+      pollOnce();
+    }
+    async function pollOnce() {
+      const cols = watchedCols();
+      if (!cols.length) return;
+      const key = cols.join(',') + '|' + (token || '');
+      try {
+        const r = await request('GET', '/api/changes?c=' + enc(cols.join(',')) + (pollSeq != null ? '&after=' + pollSeq : ''));
+        if (esKey !== key) return; // danh sách theo dõi đã đổi, vòng hỏi mới đã bắt đầu
+        if (r.reset) Object.keys(watchers).forEach(function (c) { dispatch({ type: 'reset', collection: c }); });
+        r.events.forEach(dispatch);
+        pollSeq = r.seq;
+        pollTimer = setTimeout(pollOnce, r.more ? 50 : rt.pollMs);
+      } catch (e) {
+        if (esKey === key) pollTimer = setTimeout(pollOnce, rt.pollMs * 2);
+      }
+    }
+    function openStream() {
+      const cols = watchedCols();
+      const k = cols.join(',') + '|' + (token || '');
+      if (k === esKey && (es || polling)) { if (polling && !pollTimer) pollOnce(); return; }
+      if (es) { es.close(); es = null; }
+      clearTimeout(pollTimer); pollTimer = null; clearTimeout(readyTimer);
       esKey = k;
-      if (!cols.length || typeof EventSource === 'undefined') return;
+      if (!cols.length) return;
+      if (polling || typeof EventSource === 'undefined') { startPolling(); return; }
+      let ready = false;
       es = new EventSource(base + '/api/stream?c=' + enc(cols.join(',')) + (token ? '&token=' + enc(token) : ''));
+      readyTimer = setTimeout(function () { if (!ready) startPolling(); }, 8000); // không nhận được gì sau 8 giây → hỏi định kỳ
+      es.addEventListener('ready', function () { ready = true; clearTimeout(readyTimer); });
       es.addEventListener('change', function (e) {
         let ev; try { ev = JSON.parse(e.data); } catch (x) { return; }
-        const set = watchers[ev.collection];
-        if (set) set.forEach(function (sub) { try { sub.cb(ev); } catch (x) { console.error(x); } });
+        dispatch(ev);
       });
       es.onerror = function () {
+        if (!ready) { startPolling(); return; }
         Object.keys(watchers).forEach(function (c) { watchers[c].forEach(function (sub) { if (sub.onError) sub.onError(new NanaBaseError('Mất kết nối thời gian thực, đang thử lại…', 'stream', 0)); }); });
       };
     }
@@ -178,6 +214,8 @@
       reopenStream();
       return function () { watchers[col].delete(sub); if (!watchers[col].size) delete watchers[col]; reopenStream(); };
     };
+    /** Cách nhận cập nhật đang dùng: 'sse' (tức thì) hoặc 'poll' (hỏi định kỳ) */
+    this.realtimeMode = function () { return polling ? 'poll' : 'sse'; };
 
     this.batch = function () {
       const ops = [];
@@ -257,7 +295,8 @@
   }
 
   const NanaBase = {
-    init(baseUrl) { return new App(baseUrl); },
+    /** options: { realtime: 'auto' | 'poll', pollMs: 5000 } */
+    init(baseUrl, options) { return new App(baseUrl, options); },
     Error: NanaBaseError,
     version: '1.0.0'
   };

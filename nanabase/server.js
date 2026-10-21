@@ -598,8 +598,15 @@ function queryDocs(user, col, q = {}) {
 
 // Theo dõi thay đổi theo thời gian thực (Server-Sent Events)
 const streams = new Map(); // collection -> Set<{res, user, token}>
+// Nhật ký thay đổi gần đây: dùng khi kết nối thời gian thực bị chặn (ví dụ Cloudflare Quick Tunnel),
+// trình duyệt sẽ hỏi định kỳ /api/changes thay cho SSE
+const CHANGE_LOG_MAX = 20000;
+const changeLog = [];
+let changeSeq = 0;
 function emitChange(col, type, doc) {
   if (pendingEmits) { pendingEmits.push([col, type, doc]); return; }
+  changeLog.push({ seq: ++changeSeq, col, type, doc });
+  if (changeLog.length > CHANGE_LOG_MAX) changeLog.splice(0, changeLog.length - CHANGE_LOG_MAX);
   const set = streams.get(col);
   if (!set || !set.size) return;
   const level = ruleFor(col).read;
@@ -679,8 +686,12 @@ async function readJson(req, limit = 2 * 1024 * 1024) {
   catch { fail(400, 'Dữ liệu JSON không hợp lệ', 'bad-json'); }
 }
 function clientIp(req) {
+  const remote = req.socket.remoteAddress || '';
+  // Qua Cloudflare Tunnel, mọi yêu cầu đến từ chính máy này: lấy địa chỉ thật Cloudflare gửi kèm
+  const loopback = remote === '127.0.0.1' || remote === '::1' || remote === '::ffff:127.0.0.1';
+  if (loopback && req.headers['cf-connecting-ip']) return String(req.headers['cf-connecting-ip']).trim();
   if (TRUST_PROXY && req.headers['x-forwarded-for']) return String(req.headers['x-forwarded-for']).split(',')[0].trim();
-  return req.socket.remoteAddress || '';
+  return remote;
 }
 
 const routes = [];
@@ -1037,7 +1048,7 @@ route('GET', '/api/db/:col/stream', (ctx) => {
   ctx.streaming = true;
 });
 // Một kết nối theo dõi nhiều bộ sưu tập cùng lúc: /api/stream?c=a,b,c
-route('GET', '/api/stream', (ctx) => {
+function watchCols(ctx) {
   const cols = [...new Set(String(ctx.query.get('c') || '').split(',').map((x) => x.trim()).filter(Boolean))];
   if (!cols.length || cols.length > 30) fail(400, 'Cần từ 1 đến 30 bộ sưu tập', 'bad-query');
   for (const col of cols) {
@@ -1047,7 +1058,30 @@ route('GET', '/api/stream', (ctx) => {
     if (level === 'teacher' && !hasRole(ctx.user, 'teacher')) throw denied(ctx.user);
     if (level === 'admin' && !hasRole(ctx.user, 'admin')) throw denied(ctx.user);
   }
-  ctx.res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
+  return cols;
+}
+// Hỏi định kỳ các thay đổi sau số thứ tự `after` (thay cho SSE khi bị chặn)
+route('GET', '/api/changes', (ctx) => {
+  const cols = new Set(watchCols(ctx));
+  const after = ctx.query.has('after') ? parseInt(ctx.query.get('after'), 10) : NaN;
+  if (!Number.isFinite(after)) return json(ctx.res, 200, { seq: changeSeq, events: [] });
+  const oldest = changeLog.length ? changeLog[0].seq : changeSeq + 1;
+  if (after < oldest - 1 || after > changeSeq) return json(ctx.res, 200, { seq: changeSeq, reset: true, events: [] });
+  const events = []; let last = after;
+  let i = changeLog.length - (changeSeq - after);
+  for (; i < changeLog.length && events.length < 1000; i++) {
+    const e = changeLog.at(i);
+    last = e.seq;
+    if (!cols.has(e.col)) continue;
+    if (!allowed(ruleFor(e.col).read, ctx.user, { owner: e.doc.owner, id: e.doc.id })) continue;
+    events.push({ type: e.type, doc: e.doc, collection: e.col });
+  }
+  json(ctx.res, 200, { seq: last, events, more: last < changeSeq });
+});
+route('GET', '/api/stream', (ctx) => {
+  const cols = watchCols(ctx);
+  ctx.res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store, no-transform', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
+  ctx.res.write(':' + ' '.repeat(2048) + '\n\n'); // đệm để proxy không giữ lại dữ liệu
   ctx.res.write(`event: ready\ndata: ${JSON.stringify({ collections: cols })}\n\n`);
   const client = { res: ctx.res, user: ctx.user, token: ctx.token };
   for (const col of cols) { if (!streams.has(col)) streams.set(col, new Set()); streams.get(col).add(client); }

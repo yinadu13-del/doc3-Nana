@@ -2253,7 +2253,7 @@ const NanaBaseBackend = (function() {
     name: 'nanabase',
     init: function() {
       return loadSdk().then(function() {
-        nb = NanaBase.init(NB_URL);
+        nb = NanaBase.init(NB_URL, { realtime: ACC.nanabase.realtime || 'auto', pollMs: ACC.nanabase.pollMs || 5000 });
         return nb.auth.refresh();
       }).then(function(u) {
         // không để sinh viên dùng nhầm phiên của giảng viên và ngược lại
