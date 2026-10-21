@@ -46,7 +46,7 @@ window.LIBRARY_CONFIG = {
     // Ví dụ: "http://192.168.1.5:8080" (cùng Wi-Fi) hoặc "https://data.ten-mien.vn" (qua Internet).
     // Đã điền NanaBase thì phần Firebase bên dưới được bỏ qua. Xem file HUONG-DAN-NANABASE.txt
     nanabase: {
-      url: "",
+      url: "https://ten-ngau-nhien.trycloudflare.com",
       prefix: "tv_",         // tiền tố tên bộ sưu tập, giữ nguyên trừ khi chạy nhiều thư viện trên cùng máy chủ
       realtime: "auto"       // "auto": cập nhật tức thì, tự chuyển sang hỏi định kỳ 5 giây/lần nếu đường truyền chặn
                              // "poll": luôn hỏi định kỳ (dùng khi chạy qua Cloudflare Quick Tunnel)
