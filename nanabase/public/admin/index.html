@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NanaBase · Quản trị</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='4' width='56' height='56' rx='8' fill='%23C23B22'/%3E%3Ctext x='32' y='45' font-size='36' text-anchor='middle' fill='%23fff' font-family='serif'%3E娜%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Noto+Serif+SC:wght@600&display=swap">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<!-- Màn hình đăng nhập / thiết lập lần đầu -->
+<section id="auth" class="auth" hidden>
+  <div class="auth-card">
+    <div class="brand brand-lg"><span class="seal" aria-hidden="true">娜</span><span><strong>NanaBase</strong><small id="auth-app">Máy chủ dữ liệu của bạn</small></span></div>
+    <h1 id="auth-title">Đăng nhập quản trị</h1>
+    <p id="auth-desc" class="muted">Dùng tài khoản quản trị viên để quản lý người dùng, dữ liệu và file.</p>
+    <form id="auth-form" novalidate>
+      <label class="field" id="auth-name-field" hidden><span>Họ tên</span><input name="name" autocomplete="name" placeholder="Ví dụ: Cô Nana"></label>
+      <label class="field"><span>Email</span><input name="email" type="email" autocomplete="username" required placeholder="ban@truong.edu.vn"></label>
+      <label class="field"><span>Mật khẩu</span><input name="password" type="password" autocomplete="current-password" required minlength="6" placeholder="Ít nhất 6 ký tự"></label>
+      <p class="form-error" id="auth-error" role="alert"></p>
+      <button class="btn btn-primary btn-block" id="auth-submit">Đăng nhập</button>
+    </form>
+  </div>
+</section>
+
+<!-- Ứng dụng quản trị -->
+<div id="app" class="shell" hidden>
+  <aside class="side" id="side">
+    <div class="brand"><span class="seal" aria-hidden="true">娜</span><span><strong id="side-app">NanaBase</strong><small>Bảng quản trị</small></span></div>
+    <nav class="nav" aria-label="Điều hướng">
+      <a href="#overview" data-view="overview"><svg viewBox="0 0 24 24"><path d="M4 13h6V4H4zm0 7h6v-5H4zm10 0h6v-9h-6zm0-16v5h6V4z"/></svg>Tổng quan</a>
+      <a href="#users" data-view="users"><svg viewBox="0 0 24 24"><path d="M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4zM8 12a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm8 1c-2.7 0-8 1.3-8 4v3h16v-3c0-2.7-5.3-4-8-4zm-8 0c-.3 0-.7 0-1.1.1A4.6 4.6 0 0 1 9 17v3H1v-2.5C1 15.2 5.7 13 8 13z"/></svg>Người dùng</a>
+      <a href="#data" data-view="data"><svg viewBox="0 0 24 24"><path d="M12 3C7 3 3 4.8 3 7v10c0 2.2 4 4 9 4s9-1.8 9-4V7c0-2.2-4-4-9-4zm0 2c4.4 0 7 1.4 7 2s-2.6 2-7 2-7-1.4-7-2 2.6-2 7-2zm7 12c0 .6-2.6 2-7 2s-7-1.4-7-2v-2.3c1.6.8 4.2 1.3 7 1.3s5.4-.5 7-1.3zm0-5c0 .6-2.6 2-7 2s-7-1.4-7-2V9.7c1.6.8 4.2 1.3 7 1.3s5.4-.5 7-1.3z"/></svg>Dữ liệu</a>
+      <a href="#storage" data-view="storage"><svg viewBox="0 0 24 24"><path d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8z"/></svg>Lưu trữ file</a>
+      <a href="#rules" data-view="rules"><svg viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V5zm-1 15-4-4 1.4-1.4L11 13.2l4.6-4.6L17 10z"/></svg>Quyền truy cập</a>
+      <a href="#backup" data-view="backup"><svg viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7zm-6 .7 2.6-2.6L17 11.5 12 16.5l-5-5 1.4-1.4 2.6 2.6V3h2z"/></svg>Sao lưu &amp; xuất</a>
+      <a href="#settings" data-view="settings"><svg viewBox="0 0 24 24"><path d="M19.4 13a7.5 7.5 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3h-4l-.3 2.9a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.5 7.5 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.4 7.4 0 0 0 1.7 1L11 21h4l.3-2.9a7.4 7.4 0 0 0 1.7-1l2.5 1 2-3.5zM13 15.5a3.5 3.5 0 1 1 3.5-3.5 3.5 3.5 0 0 1-3.5 3.5z"/></svg>Cài đặt</a>
+      <a href="#connect" data-view="connect"><svg viewBox="0 0 24 24"><path d="M8.6 16.6 4 12l4.6-4.6L7.2 6 1.2 12l6 6zm6.8 0L20 12l-4.6-4.6L16.8 6l6 6-6 6z"/></svg>Kết nối app</a>
+    </nav>
+    <div class="side-foot">
+      <div class="me"><span class="avatar" id="me-avatar">N</span><span><strong id="me-name">—</strong><small id="me-email"></small></span></div>
+      <button class="btn btn-ghost btn-sm" id="logout">Đăng xuất</button>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+  <main class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menu-btn" aria-label="Mở menu"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg></button>
+      <h1 id="view-title">Tổng quan</h1>
+      <div class="topbar-actions" id="view-actions"></div>
+    </header>
+    <div id="view" class="view"></div>
+  </main>
+</div>
+
+<div id="modal-root"></div>
+<div id="toasts" class="toasts" aria-live="polite"></div>
+<script src="admin.js"></script>
+</body>
+</html>

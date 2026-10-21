@@ -1,0 +1,38 @@
+THƯ VIỆN TIẾNG TRUNG CHUYÊN NGÀNH – HƯỚNG DẪN NHANH
+====================================================
+
+CÁC FILE TRONG THƯ MỤC
+  index.html          Trang web (mở file này để học). Không cần sửa.
+  config.js           Cấu hình: tên thư viện + danh sách môn học.
+  tu-dien.js          Từ điển dùng chung (pinyin + nghĩa khi rê chuột vào từ).
+  mon/doc-2.js        Dữ liệu môn Đọc 2.
+  mon/doc-3.js        Dữ liệu môn Đọc 3.
+  mon/_mau-mon-moi.js File mẫu để tạo môn mới (có chú thích từng dòng).
+  nanabase-rules.json Quyền truy cập, nhập vào máy chủ NanaBase (xem HUONG-DAN-NANABASE.txt).
+  HUONG-DAN-NANABASE.txt  Cách bật tài khoản dùng chung cho cả lớp bằng NanaBase (khuyên dùng).
+  tao-ban-1-file.js   Tạo lại bản 1 file sau khi sửa config.js / thêm môn: node tao-ban-1-file.js
+  firebase-rules.json, HUONG-DAN-FIREBASE.txt  Cách cũ dùng Firebase (chỉ khi không dùng NanaBase).
+
+TÀI KHOẢN SINH VIÊN & TRANG GIẢNG VIÊN
+  - Sinh viên đăng ký: Họ tên + Lớp sinh hoạt + Mật mã. Lần sau: Họ tên + Mật mã.
+  - Điểm mỗi bài tối đa 100; đạt từ 60 điểm mới mở bài tiếp theo (sửa trong config.js).
+  - Giảng viên: tab "Giảng viên" ở màn hình đăng nhập.
+  - CHƯA cấu hình máy chủ (NanaBase hoặc Firebase) = chế độ thử: mọi thứ chỉ lưu trên trình duyệt của máy đó,
+    mật khẩu giảng viên thử là "giangvien123" (đổi trong config.js).
+  - Muốn cả lớp dùng chung và giảng viên xem online/offline: làm theo HUONG-DAN-NANABASE.txt.
+  - Với NanaBase, mật mã sinh viên cần ít nhất 6 ký tự.
+
+THÊM MỘT MÔN MỚI
+  1. Sao chép mon/_mau-mon-moi.js, đổi tên, ví dụ mon/nghe-2.js
+  2. Sửa id, tên môn và điền bài học theo mẫu (từ vựng, ngữ pháp, bài khóa, câu hỏi).
+  3. Mở config.js, thêm dòng  "mon/nghe-2.js",  vào danh sách subjects.
+  4. Mở lại index.html. Nếu file môn có lỗi, trang thư viện sẽ báo tên file bị lỗi.
+
+LƯU Ý
+  - Giữ nguyên các file trong cùng một thư mục như hiện tại.
+  - Mỗi môn có "id" riêng; tiến độ học được lưu theo id nên đừng đổi id sau khi đã dùng.
+  - Khi đã nối máy chủ, tiến độ và điểm lưu trên máy chủ theo tài khoản (học máy nào cũng tiếp tục được).
+  - Đưa lên mạng: tải cả thư mục lên GitHub Pages / Netlify Drop, học sinh mở link là học được.
+  - File "thu-vien-tieng-trung-1-file.html" là bản gộp tất cả vào 1 file (kể cả config.js lúc
+    tạo ra) để gửi nhanh; bản này KHÔNG sửa cấu hình/thêm môn được — sửa trong thư mục này rồi
+    chạy  node tao-ban-1-file.js  để tạo lại.

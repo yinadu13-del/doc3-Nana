@@ -1,0 +1,15 @@
+{
+  "name": "nanabase",
+  "version": "1.0.0",
+  "description": "Máy chủ dữ liệu tự host kiểu Firebase: đăng nhập, cơ sở dữ liệu, lưu file, thống kê, sao lưu",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "backup": "node server.js backup"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "license": "MIT"
+}

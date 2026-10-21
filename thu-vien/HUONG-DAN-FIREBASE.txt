@@ -1,0 +1,67 @@
+HƯỚNG DẪN BẬT TÀI KHOẢN DÙNG CHUNG CHO CẢ LỚP (FIREBASE – MIỄN PHÍ)
+=====================================================================
+
+Vì sao cần bước này?
+  Khi chưa cấu hình, web chạy "chế độ thử": tài khoản và điểm chỉ lưu trên trình duyệt
+  của máy đang mở, nên giảng viên KHÔNG thấy được sinh viên ở máy khác.
+  Firebase (của Google) là máy chủ miễn phí giúp lưu tài khoản, điểm và trạng thái
+  online/offline của cả lớp. Làm một lần, mất khoảng 10–15 phút.
+
+---------------------------------------------------------------------
+BƯỚC 1 – Tạo dự án
+  1. Vào https://console.firebase.google.com và đăng nhập bằng tài khoản Gmail.
+  2. Bấm "Create a project" (Tạo dự án), đặt tên, ví dụ: thu-vien-tieng-trung.
+  3. Có thể tắt Google Analytics, rồi bấm "Create project".
+
+BƯỚC 2 – Bật đăng nhập
+  1. Menu bên trái: Build → Authentication → "Get started".
+  2. Tab "Sign-in method": bật "Anonymous" (Ẩn danh) và bật "Email/Password".
+  3. Tab "Users" → "Add user": nhập EMAIL và MẬT KHẨU của giảng viên.
+     (Đây là tài khoản đăng nhập vào trang quản lý.)
+
+BƯỚC 3 – Tạo cơ sở dữ liệu
+  1. Menu bên trái: Build → Realtime Database → "Create Database".
+  2. Chọn vị trí "Singapore (asia-southeast1)", chọn "Start in locked mode", bấm Enable.
+  3. Mở tab "Rules", xóa hết nội dung cũ, dán toàn bộ nội dung file firebase-rules.json.
+  4. Thay MỌI chỗ giangvien@example.com bằng email giảng viên đã tạo ở Bước 2
+     (viết chữ thường). Bấm "Publish".
+
+BƯỚC 4 – Lấy thông số kết nối
+  1. Bấm biểu tượng bánh răng (Project settings) → tab General.
+  2. Kéo xuống "Your apps" → bấm biểu tượng web  </>  → đặt tên app → "Register app".
+  3. Firebase hiện đoạn firebaseConfig = { apiKey: "...", authDomain: "...", ... }
+  4. Mở config.js, chép các giá trị tương ứng vào phần  accounts → firebase:
+        apiKey, authDomain, databaseURL, projectId, appId
+     Nếu không thấy databaseURL: vào Realtime Database, chép đường link ở đầu trang
+     (dạng https://ten-du-an-default-rtdb.asia-southeast1.firebasedatabase.app).
+  5. Trong config.js, sửa teacherEmails thành email giảng viên, ví dụ:
+        teacherEmails: ["nga.thanh@duytan.edu.vn"],
+
+BƯỚC 5 – Đưa web lên mạng để sinh viên vào học
+  Cách dễ nhất: https://app.netlify.com/drop  → kéo thả cả thư mục "thu-vien" vào.
+  Netlify cho một đường link, gửi link đó cho sinh viên.
+  (Hoặc dùng GitHub Pages.) Mỗi khi sửa config.js / thêm môn, kéo thả lại thư mục.
+
+---------------------------------------------------------------------
+SỬ DỤNG
+  Sinh viên:  Đăng ký lần đầu bằng Họ tên + Lớp sinh hoạt + Mật mã.
+              Các lần sau chỉ cần Họ tên + Mật mã.
+  Giảng viên: Chọn tab "Giảng viên", nhập email + mật khẩu ở Bước 2.
+              Trang quản lý hiện: online/offline (cập nhật trực tiếp), số lần đăng nhập,
+              lượt vào web, tổng điểm, bài đang học, lịch sử học từng bài;
+              cấp lại mật mã, xóa tài khoản, khóa/mở bài cho từng bạn hoặc cả lớp,
+              tải danh sách ra Excel (CSV).
+
+ĐIỂM VÀ MỞ KHÓA BÀI
+  Mỗi bài tối đa 100 điểm = thuộc từ vựng (40) + luyện tập trắc nghiệm (30)
+  + bài tập bài khóa (30). Đạt từ 60 điểm thì bài tiếp theo được mở.
+  Có thể đổi các con số này trong config.js (unlockScore, scoring).
+
+GIỚI HẠN GÓI MIỄN PHÍ
+  Khoảng 100 người online cùng lúc, 1 GB dữ liệu — đủ cho nhiều lớp học.
+
+LƯU Ý BẢO MẬT
+  Hệ thống phù hợp để theo dõi việc tự học. Mật mã sinh viên được mã hóa, nhưng
+  một bạn rành công nghệ vẫn có thể can thiệp vào điểm của chính mình, vì vậy không
+  nên dùng điểm này làm điểm thi chính thức. Chỉ tài khoản giảng viên mới xóa được
+  tài khoản và khóa/mở bài học.

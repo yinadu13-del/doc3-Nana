@@ -1,0 +1,11 @@
+{
+  "_ghi_chu": "Quyền truy cập cho Thư viện Tiếng Trung. Trong trang quản trị NanaBase: Quyền truy cập → Nhập từ file → chọn file này → Lưu quyền truy cập.",
+  "collections": {
+    "tv_students":  { "read": "self_or_teacher", "write": "self_or_teacher" },
+    "tv_progress":  { "read": "self_or_teacher", "write": "self_or_teacher" },
+    "tv_mastery":   { "read": "self_or_teacher", "write": "self_or_teacher" },
+    "tv_status":    { "read": "self_or_teacher", "write": "self_or_teacher" },
+    "tv_overrides": { "read": "self_or_teacher", "write": "teacher" },
+    "tv_locks":     { "read": "auth",            "write": "teacher" }
+  }
+}

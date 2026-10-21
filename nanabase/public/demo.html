@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo · Học từ HSK1 với NanaBase</title>
+<!-- 1) Nạp thư viện NanaBase. Ở app thật, thay bằng địa chỉ máy chủ của bạn, ví dụ http://192.168.1.5:8080/sdk.js -->
+<script src="/sdk.js"></script>
+<style>
+  :root { --ink:#1E2833; --ink2:#5A6774; --line:#E1E6E4; --bg:#F4F6F5; --card:#fff; --jade:#0E7A64; --seal:#C23B22; color-scheme: light; }
+  @media (prefers-color-scheme: dark) { :root { --ink:#E6ECE9; --ink2:#A6B3AD; --line:#2A3532; --bg:#111816; --card:#18201E; --jade:#2AA58A; --seal:#E0644B; color-scheme: dark; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.55 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--ink); }
+  main { max-width: 880px; margin: 0 auto; padding: 24px 16px 60px; display: grid; gap: 16px; }
+  header { display: flex; align-items: center; gap: 12px; }
+  header h1 { font-size: 20px; margin: 0; flex: 1; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px; }
+  .card h2 { font-size: 16px; margin: 0 0 12px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+  input, select, button { font: inherit; }
+  input, select { width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink); margin-bottom: 10px; }
+  button { padding: 9px 14px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; }
+  button.primary { background: var(--jade); border-color: var(--jade); color: #fff; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .muted { color: var(--ink2); font-size: 14px; }
+  .err { color: var(--seal); font-size: 14px; min-height: 1em; }
+  .word { display: grid; place-items: center; gap: 4px; padding: 22px; border: 1px dashed var(--line); border-radius: 10px; margin-bottom: 12px; }
+  .word .hz { font-size: 56px; line-height: 1.1; font-family: 'Noto Serif SC', 'Songti SC', serif; }
+  .word .py { color: var(--ink2); }
+  ol, ul { margin: 0; padding-left: 20px; }
+  li { padding: 3px 0; }
+  .score { font-variant-numeric: tabular-nums; font-weight: 600; float: right; }
+  code { background: var(--bg); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <header><h1>Học từ HSK1 — app mẫu dùng NanaBase</h1><span id="who" class="muted"></span><button id="logout" hidden>Đăng xuất</button></header>
+  <p class="muted">Trang này minh họa cách một app HTML dùng NanaBase: đăng nhập, lưu tiến độ, bảng xếp hạng, thông báo cập nhật tức thì và nộp bài bằng file. Mở mã nguồn trang (Ctrl + U) để xem từng đoạn.</p>
+
+  <section class="card" id="auth-card">
+    <h2>Đăng nhập hoặc tạo tài khoản học viên</h2>
+    <input id="name" placeholder="Họ tên (khi đăng ký)">
+    <input id="email" type="email" placeholder="Email">
+    <input id="pw" type="password" placeholder="Mật khẩu (ít nhất 6 ký tự)">
+    <div class="row"><button class="primary" id="btn-login">Đăng nhập</button><button id="btn-register">Đăng ký</button></div>
+    <p class="err" id="auth-err"></p>
+  </section>
+
+  <div class="grid" id="app" hidden>
+    <section class="card">
+      <h2>Ôn từ vựng</h2>
+      <div class="word"><span class="hz" id="hz"></span><span class="py" id="py"></span></div>
+      <select id="answer"></select>
+      <div class="row"><button class="primary" id="check">Kiểm tra</button><span id="result" class="muted"></span></div>
+      <p class="muted" style="margin-top:12px">Điểm của bạn: <strong id="my-score">0</strong> · Đã thuộc <strong id="my-words">0</strong> từ</p>
+    </section>
+    <section class="card">
+      <h2>Bảng xếp hạng (cập nhật tức thì)</h2>
+      <ol id="board"><li class="muted">Đang tải…</li></ol>
+    </section>
+    <section class="card">
+      <h2>Thông báo của giáo viên</h2>
+      <ul id="news"><li class="muted">Đang tải…</li></ul>
+      <p class="muted" style="margin-top:10px">Giáo viên thêm tài liệu vào bộ sưu tập <code>announcements</code> trong trang quản trị, thông báo sẽ hiện ngay ở đây.</p>
+    </section>
+    <section class="card">
+      <h2>Nộp bài viết chữ Hán</h2>
+      <input type="file" id="hw" accept="image/*,.pdf">
+      <div class="row"><button id="upload">Tải lên</button><span id="up-st" class="muted"></span></div>
+      <ul id="my-files" style="margin-top:10px"></ul>
+    </section>
+  </div>
+</main>
+
+<script>
+  // 2) Kết nối tới máy chủ. Trang này nằm trên chính máy chủ nên dùng location.origin.
+  const nb = NanaBase.init(new URLSearchParams(location.search).get('server') || location.origin);
+
+  const WORDS = [
+    ['你好', 'nǐ hǎo', 'xin chào'], ['谢谢', 'xièxie', 'cảm ơn'], ['再见', 'zàijiàn', 'tạm biệt'],
+    ['老师', 'lǎoshī', 'giáo viên'], ['学生', 'xuésheng', 'học sinh'], ['朋友', 'péngyou', 'bạn bè'],
+    ['喜欢', 'xǐhuan', 'thích'], ['米饭', 'mǐfàn', 'cơm'], ['中国', 'Zhōngguó', 'Trung Quốc'], ['水', 'shuǐ', 'nước']
+  ];
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let current, stopBoard, stopNews;
+
+  // 3) Đăng nhập / đăng ký
+  $('btn-login').onclick = () => run(() => nb.auth.login($('email').value, $('pw').value));
+  $('btn-register').onclick = () => run(() => nb.auth.register($('email').value, $('pw').value, $('name').value));
+  $('logout').onclick = () => nb.auth.logout();
+  async function run(fn) { $('auth-err').textContent = ''; try { await fn(); } catch (e) { $('auth-err').textContent = e.message; } }
+
+  // 4) Chạy mỗi khi đăng nhập hoặc đăng xuất
+  nb.auth.onChange((user) => {
+    $('auth-card').hidden = !!user; $('app').hidden = !user; $('logout').hidden = !user;
+    $('who').textContent = user ? 'Xin chào, ' + user.name : '';
+    if (stopBoard) stopBoard(); if (stopNews) stopNews();
+    if (!user) return;
+    nextWord(); loadMine(); loadFiles();
+    // Bảng xếp hạng: đọc bộ sưu tập "leaderboard", mọi người đã đăng nhập đều xem được
+    stopBoard = nb.collection('leaderboard').orderBy('diem', 'desc').limit(10).onSnapshot((items) => {
+      $('board').innerHTML = items.length ? items.map((d) => `<li>${esc(d.data.ten)} <span class="score">${d.data.diem}</span></li>`).join('') : '<li class="muted">Chưa có ai, hãy là người đầu tiên!</li>';
+    }, (e) => { $('board').innerHTML = `<li class="muted">${esc(e.message)}</li>`; });
+    // Thông báo: ai cũng xem được
+    stopNews = nb.collection('announcements').orderBy('__createdAt', 'desc').limit(5).onSnapshot((items) => {
+      $('news').innerHTML = items.length ? items.map((d) => `<li><strong>${esc(d.data.tieuDe || d.id)}</strong><br><span class="muted">${esc(d.data.noiDung || '')}</span></li>`).join('') : '<li class="muted">Chưa có thông báo.</li>';
+    });
+  });
+
+  function nextWord() {
+    current = WORDS[Math.floor(Math.random() * WORDS.length)];
+    $('hz').textContent = current[0]; $('py').textContent = current[1]; $('result').textContent = '';
+    const opts = [...WORDS].sort(() => Math.random() - 0.5).slice(0, 4);
+    if (!opts.includes(current)) opts[0] = current;
+    $('answer').innerHTML = opts.sort(() => Math.random() - 0.5).map((w) => `<option>${w[2]}</option>`).join('');
+  }
+
+  // 5) Lưu tiến độ vào progress/{mã học viên} và cập nhật bảng xếp hạng
+  $('check').onclick = async () => {
+    const user = nb.auth.user;
+    const dung = $('answer').value === current[2];
+    $('result').textContent = dung ? 'Chính xác! +10' : 'Chưa đúng, nghĩa là: ' + current[2];
+    if (!dung) return;
+    try {
+      const doc = await nb.collection('progress').doc(user.uid).set({
+        ten: user.name,
+        diem: nb.field.increment(10),
+        tuDaThuoc: nb.field.arrayUnion(current[0]),
+        lanCuoi: nb.field.serverTime()
+      }, { merge: true });
+      await nb.collection('leaderboard').doc(user.uid).set({ ten: user.name, diem: doc.data.diem });
+      showMine(doc);
+    } catch (e) { $('result').textContent = e.message; }
+    setTimeout(nextWord, 900);
+  };
+  async function loadMine() { showMine(await nb.collection('progress').doc(nb.auth.user.uid).get()); }
+  function showMine(doc) { $('my-score').textContent = doc ? doc.data.diem || 0 : 0; $('my-words').textContent = doc ? (doc.data.tuDaThuoc || []).length : 0; }
+
+  // 6) Nộp bài bằng file
+  $('upload').onclick = async () => {
+    const f = $('hw').files[0];
+    if (!f) return ($('up-st').textContent = 'Hãy chọn file trước');
+    try {
+      await nb.storage.upload(f, { folder: 'bai-nop', onProgress: (p) => ($('up-st').textContent = p + '%') });
+      $('up-st').textContent = 'Đã nộp'; $('hw').value = ''; loadFiles();
+    } catch (e) { $('up-st').textContent = e.message; }
+  };
+  async function loadFiles() {
+    const r = await nb.storage.list({ folder: 'bai-nop', mine: true });
+    const links = await Promise.all(r.items.map(async (f) => `<li><a href="${await nb.storage.getUrl(f.id)}" target="_blank">${esc(f.name)}</a></li>`));
+    $('my-files').innerHTML = links.join('');
+  }
+</script>
+</body>
+</html>

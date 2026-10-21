@@ -1,0 +1,46 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "students": {
+      ".read": "auth != null",
+      ".indexOn": ["nameKey"],
+      "$sid": {
+        ".write": "auth != null && (newData.exists() || auth.token.email === 'giangvien@example.com')",
+        ".validate": "!newData.exists() || newData.hasChildren(['name', 'nameKey', 'className', 'salt', 'passHash'])"
+      }
+    },
+
+    "progress": {
+      ".read": "auth != null",
+      "$sid": {
+        ".write": "auth != null && (newData.exists() || auth.token.email === 'giangvien@example.com')"
+      }
+    },
+
+    "mastery": {
+      "$sid": {
+        ".read": "auth != null",
+        ".write": "auth != null && (newData.exists() || auth.token.email === 'giangvien@example.com')"
+      }
+    },
+
+    "status": {
+      ".read": "auth != null",
+      "$sid": {
+        ".write": "auth != null"
+      }
+    },
+
+    "overrides": {
+      ".read": "auth != null",
+      ".write": "auth.token.email === 'giangvien@example.com'"
+    },
+
+    "locks": {
+      ".read": "auth != null",
+      ".write": "auth.token.email === 'giangvien@example.com'"
+    }
+  }
+}

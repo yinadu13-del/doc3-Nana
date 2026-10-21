@@ -1,0 +1,81 @@
+HƯỚNG DẪN DÙNG THƯ VIỆN TIẾNG TRUNG VỚI MÁY CHỦ NANABASE
+==========================================================
+
+NanaBase là máy chủ dữ liệu bạn tự chạy (thay cho Firebase). Khi nối thư viện với NanaBase:
+  - Sinh viên đăng ký / đăng nhập bằng Họ tên + Lớp + Mật mã như trước, nhưng mật mã được
+    kiểm tra trên máy chủ (không còn lưu mã băm trên trình duyệt của sinh viên).
+  - Giảng viên xem online/offline, điểm, bài đang học của cả lớp; khóa/mở bài; cấp lại mật mã;
+    xóa tài khoản — giống bản Firebase.
+  - Không giới hạn 100 người online như gói miễn phí Firebase. Đã thử 1.360 sinh viên:
+    bảng giảng viên tải trong khoảng 1 giây.
+
+Làm một lần, khoảng 10 phút.
+
+---------------------------------------------------------------------
+BƯỚC 1 – Chạy NanaBase
+  Giải nén NanaBase.zip, bấm đúp start.bat (Windows) hoặc start.command (Mac).
+  Lần đầu mở http://localhost:8080/admin/ và tạo tài khoản quản trị (email + mật khẩu của bạn).
+
+BƯỚC 2 – Đặt quyền truy cập cho thư viện
+  Trong trang quản trị NanaBase: mục "Quyền truy cập" → "Nhập từ file"
+  → chọn file nanabase-rules.json trong thư mục này → bấm "Lưu quyền truy cập".
+
+BƯỚC 3 – Tài khoản giảng viên
+  - Tài khoản quản trị ở Bước 1 dùng được ngay cho tab "Giảng viên" của thư viện.
+  - Muốn thêm giảng viên khác: mục "Người dùng" → "Thêm người dùng" → nhập email,
+    chọn vai trò "Giáo viên". Giáo viên quản lý được sinh viên nhưng không vào được
+    trang quản trị NanaBase.
+
+BƯỚC 4 – Nối thư viện với NanaBase
+  Mở config.js, tìm phần  nanabase:  và điền địa chỉ máy chủ, ví dụ:
+        nanabase: {
+          url: "http://192.168.1.5:8080",
+          prefix: "tv_"
+        },
+  Địa chỉ dùng được:
+    - Chỉ thử trên máy của bạn:   "http://localhost:8080"
+    - Sinh viên cùng mạng Wi-Fi:   địa chỉ "Trong mạng LAN" hiện trong cửa sổ NanaBase
+    - Sinh viên ở bất kỳ đâu:      địa chỉ https công khai (Cloudflare Tunnel hoặc VPS),
+                                   xem mục 4 trong README.md của NanaBase
+
+  LƯU Ý: nếu đưa thư viện lên Netlify / GitHub Pages (địa chỉ https://...), máy chủ NanaBase
+  cũng phải có địa chỉ https://... thì trình duyệt mới cho kết nối.
+
+BƯỚC 5 – Đưa thư viện cho sinh viên
+  Cách 1: kéo thả cả thư mục "thu-vien" lên https://app.netlify.com/drop như trước.
+  Cách 2: chép cả thư mục vào  NanaBase/public/thu-vien/  → sinh viên mở
+          http://ĐỊA-CHỈ-MÁY-CHỦ:8080/thu-vien/  (máy chủ vừa lưu dữ liệu vừa phát trang web,
+          không cần Netlify).
+  Cách 3: gửi bản 1 file. Sau khi sửa config.js, chạy lệnh sau trong thư mục này để tạo lại:
+              node tao-ban-1-file.js
+
+---------------------------------------------------------------------
+SỬ DỤNG
+  Sinh viên:  Đăng ký: Họ tên + Lớp sinh hoạt + Mật mã (ít nhất 6 ký tự).
+              Đăng nhập: Họ tên + Mật mã. Nếu có bạn trùng tên và trùng mật mã ở lớp khác,
+              thư viện sẽ hỏi chọn lớp.
+              Không cho đăng ký trùng họ tên trong cùng một lớp.
+  Giảng viên: Tab "Giảng viên" → email + mật khẩu NanaBase.
+
+  Có thể tạo sẵn tài khoản cho cả lớp: trang quản trị NanaBase → Người dùng → Nhập danh sách
+  → dán từ Excel các cột  Họ tên | Lớp | Mật khẩu  (bỏ trống mật khẩu để tự tạo, rồi tải danh
+  sách mật khẩu về gửi sinh viên).
+
+DỮ LIỆU LƯU Ở ĐÂU TRÊN NANABASE
+  tv_students   hồ sơ sinh viên: lớp, số lần đăng nhập, tổng điểm
+  tv_progress   điểm từng bài và lịch sử các lần học
+  tv_mastery    tiến độ thuộc từ vựng
+  tv_status     online/offline, đang ở bài nào
+  tv_overrides  bài giảng viên khóa/mở riêng cho từng bạn
+  tv_locks      bài giảng viên khóa cho cả lớp
+  Xem, xuất Excel, sao lưu: trang quản trị NanaBase → Dữ liệu / Sao lưu & xuất.
+
+ONLINE / OFFLINE
+  Thư viện gửi trạng thái mỗi 45 giây khi đang mở. Sinh viên đóng trình duyệt hoặc mất mạng
+  quá 3 phút sẽ hiện "Offline".
+
+LƯU Ý BẢO MẬT
+  Mật mã sinh viên được mã hóa trên máy chủ và không ai đọc được, kể cả giảng viên.
+  Điểm vẫn do trình duyệt của sinh viên gửi lên, nên một bạn rành công nghệ có thể sửa điểm
+  của chính mình; không nên dùng làm điểm thi chính thức. Sinh viên không đọc hoặc sửa được
+  dữ liệu của bạn khác.

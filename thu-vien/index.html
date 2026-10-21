@@ -1,0 +1,3127 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#7d1f33">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Thư viện Tiếng Trung chuyên ngành</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+        chinese: ['"Noto Sans SC"', 'sans-serif'],
+        serifzh: ['"Noto Serif SC"', 'serif']
+      },
+      colors: {
+        wine: {
+          50: '#fdf3f5', 100: '#fae6ea', 200: '#f2c9d1', 300: '#e49dab',
+          400: '#cc6a7e', 500: '#ad3d55', 600: '#952b43', 700: '#7d1f33',
+          800: '#64182a', 900: '#4a1220'
+        }
+      }
+    }
+  }
+}
+</script>
+<style>
+  html { -webkit-text-size-adjust: 100%; }
+  body { background:#faf7f7; font-family:'Inter',sans-serif; overflow-x:hidden; -webkit-tap-highlight-color: transparent; }
+  .chinese-text { font-family:'Noto Sans SC',sans-serif; }
+  .serif-zh { font-family:'Noto Serif SC',serif; }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  .pb-nav { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+  .sticky-actions { position: sticky; bottom: calc(72px + env(safe-area-inset-bottom)); z-index: 20; }
+  .no-scrollbar::-webkit-scrollbar { display:none; }
+  .no-scrollbar { scrollbar-width:none; }
+  button { touch-action: manipulation; }
+
+  /* Anki-style answer reveal */
+  .answer-reveal { animation: revealIn .28s ease-out; }
+  @keyframes revealIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
+  .card-enter { animation: cardIn .25s ease-out; }
+  @keyframes cardIn { from { opacity:0; } to { opacity:1; } }
+
+  /* 3D flip flashcard */
+  .fc-scene { perspective: 1400px; height: min(58vh, 500px); min-height: 380px; }
+  .fc-inner { position:relative; width:100%; height:100%; transform-style:preserve-3d; transition: transform .55s cubic-bezier(.4,.2,.2,1); cursor:pointer; }
+  .fc-inner.flipped { transform: rotateY(180deg); }
+  .fc-inner.no-anim { transition: none !important; }
+  .fc-face { position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden; border-radius:1.5rem; display:flex; flex-direction:column; overflow:hidden; }
+  .fc-back { transform: rotateY(180deg); }
+
+  /* Hover tooltip (desktop) */
+  #wordTooltip { transition: opacity .12s ease; }
+
+  /* Reading tokens */
+  .word-token { display:inline-block; padding:1px 2px; margin:0 1px; border-radius:6px; cursor:pointer; transition:background .15s; border-bottom:2px solid transparent; }
+  .word-token:active, .word-token.active-token { background:#fae6ea; color:#64182a; border-bottom-color:#ad3d55; }
+  .word-token.vocab-highlight { border-bottom:2px dotted #ad3d55; font-weight:600; color:#64182a; }
+
+  /* Bottom sheet */
+  .sheet { transform: translateY(100%); transition: transform .25s ease; }
+  .sheet.open { transform: translateY(0); }
+  .backdrop { opacity:0; pointer-events:none; transition: opacity .25s; }
+  .backdrop.open { opacity:1; pointer-events:auto; }
+
+  .status-pulse { animation: pulseDot 1.6s ease-in-out infinite; }
+  @keyframes pulseDot { 0%,100% { box-shadow: 0 0 0 0 rgba(173,61,85,.55); } 50% { box-shadow: 0 0 0 5px rgba(173,61,85,0); } }
+  ::-webkit-scrollbar { width:6px; height:6px; }
+  ::-webkit-scrollbar-thumb { background:#e2cdd1; border-radius:999px; }
+</style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+<!-- ===== HEADER ===== -->
+<header class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-wine-100" style="padding-top: env(safe-area-inset-top);">
+  <div class="max-w-3xl mx-auto px-3 h-14 flex items-center justify-between gap-2">
+    <div class="flex items-center gap-2 min-w-0">
+      <button id="backBtn" data-action="nav-back" class="hidden w-10 h-10 rounded-full bg-wine-50 text-wine-700 flex items-center justify-center shrink-0 active:scale-95 transition" aria-label="Quay lại">
+        <i class="fa-solid fa-chevron-left pointer-events-none"></i>
+      </button>
+      <div data-action="go-library" class="cursor-pointer flex items-center gap-2 min-w-0">
+        <div id="logoBox" class="w-9 h-9 rounded-xl bg-wine-700 flex items-center justify-center text-white font-bold serif-zh shrink-0">书</div>
+        <div class="min-w-0">
+          <h1 id="headerTitle" class="text-base font-extrabold text-wine-800 leading-tight truncate">Thư viện Tiếng Trung</h1>
+          <p id="headerSubtitle" class="text-[11px] text-slate-500 truncate">Đang tải dữ liệu...</p>
+        </div>
+      </div>
+    </div>
+    <div class="flex items-center gap-1.5 shrink-0">
+      <div data-action="pill-home" class="cursor-pointer bg-wine-50 border border-wine-100 px-2.5 py-1.5 rounded-full flex items-center gap-1.5" title="Tiến độ">
+        <i class="fa-solid fa-chart-pie text-wine-700 text-xs"></i>
+        <span id="headerMasteryBadge" class="text-xs font-extrabold text-wine-800">0%</span>
+      </div>
+      <button id="addWordBtn" data-action="open-add-modal" class="hidden w-9 h-9 rounded-full bg-wine-700 text-white flex items-center justify-center active:scale-95 transition" aria-label="Thêm từ">
+        <i class="fa-solid fa-plus pointer-events-none"></i>
+      </button>
+      <button id="userChip" data-action="open-account" class="hidden w-9 h-9 rounded-full bg-white border-2 border-wine-700 text-wine-700 font-black text-sm flex items-center justify-center active:scale-95 transition" aria-label="Tài khoản"></button>
+    </div>
+  </div>
+</header>
+
+<!-- ===== ĐĂNG NHẬP / ĐĂNG KÝ ===== -->
+<div id="authView" class="hidden fixed inset-0 z-[55] overflow-y-auto" style="background: linear-gradient(160deg,#4a1220 0%,#7d1f33 45%,#faf7f7 45.1%);">
+  <div class="min-h-full flex flex-col items-center justify-start px-4 pt-10 pb-8" style="padding-top: calc(2.5rem + env(safe-area-inset-top));">
+    <div class="text-center text-white mb-5">
+      <div id="authLogo" class="w-16 h-16 rounded-2xl bg-white/15 border border-white/30 flex items-center justify-center text-3xl serif-zh font-bold mx-auto">书</div>
+      <h1 id="authSiteName" class="text-2xl font-extrabold mt-3">Thư viện Tiếng Trung</h1>
+      <p class="text-wine-100 text-xs mt-1">Đăng nhập để lưu điểm và mở khóa bài học</p>
+    </div>
+    <div class="w-full max-w-sm bg-white rounded-3xl shadow-2xl p-5 space-y-4">
+      <div class="grid grid-cols-3 bg-slate-100 rounded-xl p-1 gap-1">
+        <button data-action="auth-tab" data-tab="login" id="authTab-login" class="auth-tab py-2 rounded-lg text-xs font-bold">Đăng nhập</button>
+        <button data-action="auth-tab" data-tab="register" id="authTab-register" class="auth-tab py-2 rounded-lg text-xs font-bold">Đăng ký</button>
+        <button data-action="auth-tab" data-tab="teacher" id="authTab-teacher" class="auth-tab py-2 rounded-lg text-xs font-bold">Giảng viên</button>
+      </div>
+
+      <div id="authForm-login" class="space-y-3">
+        <div><label class="block text-xs font-bold text-slate-600 mb-1">Họ và tên sinh viên</label>
+          <input id="loginName" type="text" autocomplete="name" placeholder="VD: Nguyễn Văn An" class="auth-input w-full px-3 py-3 rounded-xl bg-slate-50 border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-wine-400"></div>
+        <div><label class="block text-xs font-bold text-slate-600 mb-1">Mật mã</label>
+          <input id="loginPw" type="password" autocomplete="current-password" placeholder="••••" class="auth-input w-full px-3 py-3 rounded-xl bg-slate-50 border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-wine-400" data-submit="do-login"></div>
+        <div id="loginClassPick" class="hidden rounded-2xl bg-wine-50 border border-wine-100 p-3 space-y-2">
+          <div class="text-xs font-bold text-wine-800">Có nhiều bạn trùng tên — bạn học lớp nào?</div>
+          <div id="loginClassList" class="space-y-1.5"></div>
+        </div>
+        <button data-action="do-login" class="auth-submit w-full py-3.5 rounded-xl bg-wine-700 text-white font-extrabold">Đăng nhập</button>
+      </div>
+
+      <div id="authForm-register" class="hidden space-y-3">
+        <div><label class="block text-xs font-bold text-slate-600 mb-1">Họ và tên sinh viên</label>
+          <input id="regName" type="text" autocomplete="name" placeholder="VD: Nguyễn Văn An" class="auth-input w-full px-3 py-3 rounded-xl bg-slate-50 border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-wine-400"></div>
+        <div><label class="block text-xs font-bold text-slate-600 mb-1">Lớp sinh hoạt</label>
+          <input id="regClass" type="text" placeholder="VD: K28NTQ1" class="auth-input w-full px-3 py-3 rounded-xl bg-slate-50 border border-slate-200 text-base uppercase focus:outline-none focus:ring-2 focus:ring-wine-400"></div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="block text-xs font-bold text-slate-600 mb-1">Mật mã</label>
+            <input id="regPw" type="password" autocomplete="new-password" placeholder="ít nhất 4 ký tự" class="auth-input w-full px-3 py-3 rounded-xl bg-slate-50 border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-wine-400"></div>
+          <div><label class="block text-xs font-bold text-slate-600 mb-1">Nhập lại</label>
+            <input id="regPw2" type="password" autocomplete="new-password" placeholder="••••" class="auth-input w-full px-3 py-3 rounded-xl bg-slate-50 border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-wine-400" data-submit="do-register"></div>
+        </div>
+        <p class="text-[11px] text-slate-500">Lần sau chỉ cần nhập <b>họ tên</b> và <b>mật mã</b> để đăng nhập. Hãy ghi nhớ mật mã của mình.</p>
+        <button data-action="do-register" class="auth-submit w-full py-3.5 rounded-xl bg-wine-700 text-white font-extrabold">Tạo tài khoản</button>
+      </div>
+
+      <div id="authForm-teacher" class="hidden space-y-3">
+        <div id="tEmailWrap"><label class="block text-xs font-bold text-slate-600 mb-1">Email giảng viên</label>
+          <input id="tEmail" type="email" autocomplete="username" placeholder="giangvien@truong.edu.vn" class="auth-input w-full px-3 py-3 rounded-xl bg-slate-50 border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-wine-400"></div>
+        <div><label class="block text-xs font-bold text-slate-600 mb-1">Mật khẩu giảng viên</label>
+          <input id="tPw" type="password" autocomplete="current-password" placeholder="••••••" class="auth-input w-full px-3 py-3 rounded-xl bg-slate-50 border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-wine-400" data-submit="do-teacher-login"></div>
+        <p id="tDemoHint" class="text-[11px] text-slate-500">Chế độ thử: mật khẩu giảng viên được đặt trong config.js (teacherDemoPassword).</p>
+        <button data-action="do-teacher-login" class="auth-submit w-full py-3.5 rounded-xl bg-wine-800 text-white font-extrabold"><i class="fa-solid fa-chalkboard-user"></i> Vào trang quản lý</button>
+      </div>
+
+      <div id="authError" class="hidden rounded-xl bg-wine-50 border border-wine-200 text-wine-800 text-xs font-semibold p-3"></div>
+      <p id="authModeNote" class="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-2.5 empty:hidden"></p>
+    </div>
+  </div>
+</div>
+
+<main id="mainEl" class="flex-1 max-w-3xl w-full mx-auto px-3 py-4">
+
+  <!-- ===== LOADING ===== -->
+  <section id="loadingView" class="py-24 text-center text-slate-400">
+    <i class="fa-solid fa-spinner fa-spin text-3xl text-wine-300"></i>
+    <p class="text-sm mt-3">Đang tải thư viện...</p>
+  </section>
+
+  <!-- ===== LIBRARY (TRANG CHỦ THƯ VIỆN) ===== -->
+  <section id="libraryView" class="hidden space-y-5">
+    <div class="rounded-3xl p-5 text-white shadow-lg relative overflow-hidden" style="background: linear-gradient(140deg,#4a1220 0%,#7d1f33 55%,#a33a51 100%);">
+      <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-white/10 pointer-events-none"></div>
+      <div id="libWatermark" class="absolute right-5 bottom-1 serif-zh text-8xl text-white/10 pointer-events-none select-none">书</div>
+      <div class="relative">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white/15 mb-2">
+          <i class="fa-solid fa-book-bookmark"></i> Thư viện môn chuyên ngành
+        </span>
+        <h2 id="libTitle" class="text-2xl font-extrabold leading-tight">Thư viện Tiếng Trung</h2>
+        <p id="libSubtitle" class="text-wine-100 text-xs mt-1"></p>
+        <div class="grid grid-cols-3 gap-2 mt-4 text-center">
+          <div class="rounded-2xl p-2.5 border border-white/15" style="background:rgba(255,255,255,.12)">
+            <div class="text-[11px] text-wine-100">Môn học</div>
+            <div id="libCountSubjects" class="text-lg font-extrabold mt-0.5">0</div>
+          </div>
+          <div class="rounded-2xl p-2.5 border border-white/15" style="background:rgba(255,255,255,.12)">
+            <div class="text-[11px] text-wine-100">Bài học</div>
+            <div id="libCountLessons" class="text-lg font-extrabold mt-0.5">0</div>
+          </div>
+          <div class="rounded-2xl p-2.5 border border-white/15" style="background:rgba(255,255,255,.12)">
+            <div class="text-[11px] text-wine-100">Đã thuộc</div>
+            <div id="libCountMastered" class="text-lg font-extrabold mt-0.5">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="relative">
+      <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+      <input id="libSearchInput" type="text" placeholder="Tìm môn học, bài khóa, từ vựng..." class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-wine-100 text-base focus:outline-none focus:ring-2 focus:ring-wine-400">
+    </div>
+    <div id="libLoadErrors"></div>
+    <div id="subjectsGrid" class="space-y-5"></div>
+  </section>
+
+  <!-- ===== SUBJECT HOME (TRANG MÔN HỌC) ===== -->
+  <section id="homeView" class="hidden space-y-5">
+    <div class="rounded-3xl p-5 text-white shadow-lg relative overflow-hidden" style="background: linear-gradient(140deg,#4a1220 0%,#7d1f33 55%,#a33a51 100%);">
+      <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-white/10 pointer-events-none"></div>
+      <div id="subjWatermark" class="absolute right-6 bottom-2 serif-zh text-7xl text-white/10 pointer-events-none select-none">读</div>
+      <div class="relative">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white/15 mb-2">
+              <i class="fa-solid fa-graduation-cap"></i> <span id="subjBadgeText">Toàn môn</span>
+            </span>
+            <h2 class="text-xl font-extrabold leading-tight">Tiến độ ghi nhớ</h2>
+            <p class="text-wine-100 text-xs mt-0.5">Trên tất cả các bài học</p>
+          </div>
+          <div class="bg-white/15 rounded-2xl px-3 py-2 text-center border border-white/20 shrink-0">
+            <div id="overallPercentText" class="text-3xl font-black leading-none">0%</div>
+            <div class="text-[10px] text-wine-100 mt-1">Thông thạo</div>
+          </div>
+        </div>
+
+        <div class="w-full h-3 bg-black/25 rounded-full overflow-hidden flex mt-4">
+          <div id="barMastered" class="bg-white h-full transition-all duration-500" style="width:0%"></div>
+          <div id="barMedium" class="bg-amber-300 h-full transition-all duration-500" style="width:0%"></div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 mt-4 text-center">
+          <div class="bg-white/12 rounded-2xl p-2.5 border border-white/15" style="background:rgba(255,255,255,.12)">
+            <div class="flex items-center justify-center gap-1 text-[11px] text-wine-100"><span class="w-2 h-2 rounded-full bg-white"></span>Đã thuộc</div>
+            <div id="countMastered" class="text-lg font-extrabold mt-0.5">0</div>
+          </div>
+          <div class="rounded-2xl p-2.5 border border-white/15" style="background:rgba(255,255,255,.12)">
+            <div class="flex items-center justify-center gap-1 text-[11px] text-wine-100"><span class="w-2 h-2 rounded-full bg-amber-300"></span>Thuộc vừa</div>
+            <div id="countMedium" class="text-lg font-extrabold mt-0.5">0</div>
+          </div>
+          <div class="rounded-2xl p-2.5 border border-white/15" style="background:rgba(255,255,255,.12)">
+            <div class="flex items-center justify-center gap-1 text-[11px] text-wine-100"><span class="w-2 h-2 rounded-full bg-black/30 border border-white/50"></span>Chưa thuộc</div>
+            <div id="countUnlearned" class="text-lg font-extrabold mt-0.5">0</div>
+          </div>
+        </div>
+
+        <p id="weakWordsSummaryText" class="text-[11px] text-wine-100 mt-4"></p>
+        <div class="flex items-center gap-2 mt-2">
+          <button data-action="global-weak-quiz" class="flex-1 py-3 rounded-2xl bg-white text-wine-800 font-bold text-sm shadow active:scale-[.98] transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-bolt text-amber-500"></i> Luyện từ yếu toàn môn
+          </button>
+          <button data-action="reset-all-progress" class="w-12 h-12 rounded-2xl text-white flex items-center justify-center active:scale-95 transition" style="background:rgba(255,255,255,.15)" aria-label="Đặt lại tiến độ">
+            <i class="fa-solid fa-rotate-right pointer-events-none"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex items-end justify-between px-1">
+      <div>
+        <h3 id="subjRoadmapTitle" class="text-lg font-extrabold text-slate-800">Lộ trình học</h3>
+        <p id="subjRoadmapSub" class="text-xs text-slate-500">Mỗi bài học riêng: từ vựng → ngữ pháp → thẻ bài → luyện tập → bài khóa</p>
+      </div>
+      <span id="totalLessonsBadge" class="px-2.5 py-1 rounded-full bg-wine-50 text-wine-700 font-bold text-xs border border-wine-100">6 bài</span>
+    </div>
+
+    <div id="lessonsGrid" class="space-y-5"></div>
+  </section>
+
+  <!-- ===== QUẢN LÝ GIẢNG VIÊN ===== -->
+  <section id="teacherView" class="hidden space-y-4">
+    <div class="rounded-3xl p-5 text-white shadow-lg relative overflow-hidden" style="background: linear-gradient(140deg,#4a1220 0%,#7d1f33 55%,#a33a51 100%);">
+      <div class="absolute right-5 bottom-1 serif-zh text-8xl text-white/10 pointer-events-none select-none">师</div>
+      <div class="relative">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white/15 mb-2"><i class="fa-solid fa-chalkboard-user"></i> Trang giảng viên</span>
+        <h2 class="text-xl font-extrabold leading-tight">Quản lý sinh viên</h2>
+        <p class="text-wine-100 text-xs mt-0.5">Trạng thái online cập nhật trực tiếp</p>
+        <div class="grid grid-cols-4 gap-2 mt-4 text-center">
+          <div class="rounded-2xl p-2 border border-white/15" style="background:rgba(255,255,255,.12)"><div class="text-[10px] text-wine-100">Tài khoản</div><div id="tCountAll" class="text-lg font-extrabold">0</div></div>
+          <div class="rounded-2xl p-2 border border-white/30" style="background:rgba(255,255,255,.22)"><div class="text-[10px] text-wine-100">Online</div><div id="tCountOnline" class="text-lg font-extrabold">0</div></div>
+          <div class="rounded-2xl p-2 border border-white/15" style="background:rgba(255,255,255,.12)"><div class="text-[10px] text-wine-100">Lớp</div><div id="tCountClasses" class="text-lg font-extrabold">0</div></div>
+          <div class="rounded-2xl p-2 border border-white/15" style="background:rgba(255,255,255,.12)"><div class="text-[10px] text-wine-100">Điểm TB</div><div id="tAvgPoints" class="text-lg font-extrabold">0</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 bg-slate-100 rounded-xl p-1 gap-1">
+      <button data-action="t-tab" data-tab="students" id="tTab-students" class="py-2 rounded-lg text-xs font-bold">Sinh viên</button>
+      <button data-action="t-tab" data-tab="locks" id="tTab-locks" class="py-2 rounded-lg text-xs font-bold">Khóa bài cả lớp</button>
+    </div>
+    <div id="tPanel-students" class="space-y-3">
+      <div class="bg-white rounded-2xl p-3 border border-wine-100 shadow-sm space-y-2">
+        <div class="relative"><i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+          <input id="tSearch" type="text" placeholder="Tìm tên sinh viên hoặc lớp..." class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-wine-400"></div>
+        <div class="grid grid-cols-2 gap-2">
+          <select id="tClassFilter" class="px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold"></select>
+          <select id="tSort" class="px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold">
+            <option value="online">Online trước</option><option value="points">Điểm cao nhất</option><option value="logins">Đăng nhập nhiều</option><option value="name">Theo tên</option><option value="class">Theo lớp</option>
+          </select>
+        </div>
+        <button data-action="t-export" class="w-full py-2 rounded-xl bg-wine-50 border border-wine-200 text-wine-800 text-xs font-bold"><i class="fa-solid fa-file-csv"></i> Tải danh sách (Excel / CSV)</button>
+      </div>
+      <div id="tStudentList" class="space-y-2.5"></div>
+    </div>
+    <div id="tPanel-locks" class="hidden space-y-3">
+      <p class="text-xs text-slate-600 px-1">Bài đang khóa sẽ bị khóa với <b>tất cả</b> sinh viên (trừ bạn được giảng viên chọn “Mở” riêng trong trang chi tiết sinh viên).</p>
+      <div id="tLockList" class="space-y-3"></div>
+    </div>
+  </section>
+
+  <!-- ===== LESSON VIEW ===== -->
+  <section id="lessonView" class="hidden space-y-4">
+    <!-- Compact banner -->
+    <div class="bg-white rounded-2xl p-4 border border-wine-100 shadow-sm">
+      <div class="flex items-center gap-3">
+        <div id="lessonNumberBox" class="w-12 h-12 rounded-2xl bg-wine-700 text-white font-black text-xl flex flex-col items-center justify-center gap-0.5 shrink-0">1</div>
+        <div class="min-w-0 flex-1">
+          <h2 id="lessonTitleZh" class="text-base font-bold text-slate-800 chinese-text leading-snug"></h2>
+          <p id="lessonTitleVi" class="text-xs text-slate-500 leading-snug"></p>
+        </div>
+        <div class="text-right shrink-0">
+          <div id="lessonPercentBadge" class="text-lg font-black text-wine-700 leading-none">0%</div>
+          <div class="text-[10px] text-slate-400 mt-0.5"><span id="lessonWordCount">0</span> từ</div>
+        </div>
+      </div>
+      <div id="lessonScoreBadge" class="hidden mt-3 px-3 py-2 rounded-xl bg-wine-50 border border-wine-100 text-[12px] font-bold text-wine-800"></div>
+      <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden flex mt-3">
+        <div id="lessonBarMastered" class="bg-wine-700 h-full transition-all" style="width:0%"></div>
+        <div id="lessonBarMedium" class="bg-amber-400 h-full transition-all" style="width:0%"></div>
+      </div>
+      <div class="flex items-center gap-3 mt-2 text-[11px] text-slate-500">
+        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-wine-700"></span>Thuộc <b id="lessonMasteredCount" class="text-slate-700">0</b></span>
+        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-400"></span>Vừa <b id="lessonMediumCount" class="text-slate-700">0</b></span>
+        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-slate-300"></span>Chưa <b id="lessonUnlearnedCount" class="text-slate-700">0</b></span>
+      </div>
+    </div>
+
+    <!-- ===== 1. VOCAB ===== -->
+    <div id="activity-vocab" class="space-y-3">
+      <div class="bg-white rounded-2xl p-3 border border-wine-100 shadow-sm space-y-2">
+        <div class="relative">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+          <input id="vocabSearchInput" type="text" placeholder="Tìm chữ Hán, pinyin, nghĩa..." class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-wine-400">
+        </div>
+        <div id="vocabFilterChips" class="flex gap-2 overflow-x-auto no-scrollbar">
+          <button data-action="vocab-filter" data-filter="all" class="vf-chip shrink-0 px-3 py-1.5 rounded-full text-xs font-bold">Tất cả</button>
+          <button data-action="vocab-filter" data-filter="unlearned" class="vf-chip shrink-0 px-3 py-1.5 rounded-full text-xs font-bold">Chưa thuộc</button>
+          <button data-action="vocab-filter" data-filter="medium" class="vf-chip shrink-0 px-3 py-1.5 rounded-full text-xs font-bold">Thuộc vừa</button>
+          <button data-action="vocab-filter" data-filter="mastered" class="vf-chip shrink-0 px-3 py-1.5 rounded-full text-xs font-bold">Đã thuộc</button>
+        </div>
+      </div>
+      <div id="vocabListContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+    </div>
+
+    <!-- ===== 1b. GRAMMAR ===== -->
+    <div id="activity-grammar" class="hidden space-y-3">
+      <div id="grammarContainer" class="space-y-3"></div>
+    </div>
+
+    <!-- ===== 2. FLASHCARD (ANKI STYLE) ===== -->
+    <div id="activity-flashcard" class="hidden space-y-3">
+      <!-- Settings chips -->
+      <div class="bg-white rounded-2xl p-3 border border-wine-100 shadow-sm space-y-2.5">
+        <div class="flex items-center gap-2">
+          <span class="text-[11px] font-bold text-slate-400 uppercase shrink-0">Mặt trước</span>
+          <div class="flex-1 grid grid-cols-4 bg-slate-100 rounded-xl p-1 gap-1">
+            <button data-action="fc-front-mode" data-mode="hanzi" id="fcMode-hanzi" class="fc-mode py-1.5 rounded-lg text-xs font-bold">Hán</button>
+            <button data-action="fc-front-mode" data-mode="pinyin" id="fcMode-pinyin" class="fc-mode py-1.5 rounded-lg text-xs font-bold">Pinyin</button>
+            <button data-action="fc-front-mode" data-mode="both" id="fcMode-both" class="fc-mode py-1.5 rounded-lg text-xs font-bold">Hán+Py</button>
+            <button data-action="fc-front-mode" data-mode="meaning" id="fcMode-meaning" class="fc-mode py-1.5 rounded-lg text-xs font-bold">Nghĩa</button>
+          </div>
+        </div>
+        <div class="flex gap-2 overflow-x-auto no-scrollbar">
+          <button data-action="fc-toggle-weak" id="fcWeakOnlyBtn" class="shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border flex items-center gap-1.5">
+            <i class="fa-solid fa-filter pointer-events-none"></i><span id="fcFilterLabel" class="pointer-events-none">Tất cả từ</span>
+          </button>
+          <button data-action="fc-shuffle" class="shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border border-slate-200 bg-white text-slate-700 flex items-center gap-1.5">
+            <i class="fa-solid fa-shuffle pointer-events-none"></i>Xáo trộn
+          </button>
+          <button data-action="fc-toggle-audio" id="fcAudioBtn" class="shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border flex items-center gap-1.5">
+            <i class="fa-solid fa-volume-high pointer-events-none"></i><span class="pointer-events-none">Tự phát âm</span>
+          </button>
+          <button data-action="fc-undo" id="fcUndoBtn" class="shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border border-slate-200 bg-white text-slate-700 flex items-center gap-1.5 disabled:opacity-40">
+            <i class="fa-solid fa-rotate-left pointer-events-none"></i>Hoàn tác
+          </button>
+        </div>
+      </div>
+
+      <div id="fcStudyArea" class="space-y-3">
+        <!-- Anki-like counters -->
+        <div class="flex items-center justify-between px-1">
+          <div class="flex items-center gap-3 text-sm font-extrabold">
+            <span class="flex items-center gap-1 text-slate-500" title="Thẻ mới"><span class="text-[10px] font-semibold uppercase">Mới</span><span id="fcCountNew">0</span></span>
+            <span class="flex items-center gap-1 text-wine-700" title="Đang học lại"><span class="text-[10px] font-semibold uppercase">Học lại</span><span id="fcCountLearn">0</span></span>
+            <span class="flex items-center gap-1 text-amber-600" title="Hoàn thành"><span class="text-[10px] font-semibold uppercase">Xong</span><span id="fcCountDone">0</span></span>
+          </div>
+          <span id="fcCurrentStatusBadge" class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600">—</span>
+        </div>
+        <div class="w-full h-1.5 bg-wine-50 rounded-full overflow-hidden">
+          <div id="fcProgressBar" class="bg-wine-700 h-full transition-all duration-300" style="width:0%"></div>
+        </div>
+
+        <!-- The card (3D flip: tap to flip back and forth) -->
+        <div id="fcScene" class="fc-scene select-none">
+          <div id="fcCard" data-action="fc-tap" class="fc-inner">
+            <!-- FRONT -->
+            <div class="fc-face bg-white border border-wine-100 shadow-sm">
+              <div class="flex items-center justify-between px-4 pt-3">
+                <span id="fcFrontLabel" class="text-[10px] font-extrabold tracking-widest uppercase text-wine-400">CHỮ HÁN</span>
+                <button data-action="fc-speak" class="w-10 h-10 rounded-full bg-wine-50 text-wine-700 flex items-center justify-center active:scale-95 transition" aria-label="Nghe phát âm">
+                  <i class="fa-solid fa-volume-high pointer-events-none"></i>
+                </button>
+              </div>
+              <div class="flex-1 px-5 flex flex-col justify-center text-center">
+                <div id="fcFrontMain" class="text-6xl font-bold text-slate-900 chinese-text leading-tight break-words"></div>
+                <div id="fcFrontSub" class="text-xl text-wine-600 font-semibold mt-3 hidden"></div>
+              </div>
+              <div class="pb-4 text-xs text-slate-400 flex flex-col items-center gap-1">
+                <i class="fa-solid fa-rotate text-base text-wine-300"></i>
+                Chạm vào thẻ để lật mặt sau
+              </div>
+            </div>
+            <!-- BACK -->
+            <div class="fc-face fc-back bg-white border-2 border-wine-700 shadow-sm">
+              <div class="flex items-center justify-between px-4 pt-3 shrink-0">
+                <span class="text-[10px] font-extrabold tracking-widest uppercase text-wine-700">MẶT SAU</span>
+                <button data-action="fc-speak" class="w-10 h-10 rounded-full bg-wine-700 text-white flex items-center justify-center active:scale-95 transition" aria-label="Nghe phát âm">
+                  <i class="fa-solid fa-volume-high pointer-events-none"></i>
+                </button>
+              </div>
+              <div class="flex-1 overflow-y-auto px-5 py-2 flex flex-col">
+                <div class="my-auto text-center space-y-1.5 py-2">
+                  <div id="fcBackHanzi" class="text-5xl font-bold text-slate-900 chinese-text"></div>
+                  <div id="fcBackPinyin" class="text-xl font-semibold text-wine-600"></div>
+                  <div id="fcBackMeaning" class="text-2xl font-extrabold text-slate-900 leading-snug"></div>
+                  <span id="fcBackPos" class="inline-block px-2.5 py-0.5 rounded-full bg-wine-50 text-wine-700 text-[11px] font-bold border border-wine-100"></span>
+                  <div id="fcExampleBox" class="mt-3 rounded-2xl bg-wine-50/60 border border-wine-100 p-3 text-left">
+                    <div class="text-[10px] font-bold text-wine-500 uppercase mb-1">Ví dụ</div>
+                    <p id="fcBackExampleZh" class="text-base font-medium text-slate-800 chinese-text leading-relaxed"></p>
+                    <p id="fcBackExampleVi" class="text-xs text-slate-500 mt-1"></p>
+                  </div>
+                </div>
+              </div>
+              <div class="pb-3 pt-1 text-xs text-slate-400 flex items-center justify-center gap-1 shrink-0">
+                <i class="fa-solid fa-rotate-left text-wine-300"></i> Chạm để lật lại mặt trước
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom actions (sticky above tab bar) -->
+        <div class="sticky-actions">
+          <div class="bg-white/95 backdrop-blur rounded-2xl border border-wine-100 shadow-lg p-2">
+            <button id="fcShowAnswerBtn" data-action="fc-flip" class="w-full py-4 rounded-xl bg-wine-700 active:bg-wine-800 text-white font-extrabold text-base transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-rotate pointer-events-none"></i> Lật thẻ
+            </button>
+            <button id="fcFlipSmallBtn" data-action="fc-flip" class="hidden w-full mb-2 py-1.5 rounded-lg bg-wine-50 text-wine-700 text-xs font-bold flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-rotate pointer-events-none"></i><span id="fcFlipSmallLabel" class="pointer-events-none">Lật lại mặt trước</span>
+            </button>
+            <div id="fcRatingButtons" class="hidden grid grid-cols-3 gap-2">
+              <button data-action="fc-rate" data-status="unlearned" class="py-2.5 rounded-xl bg-slate-100 active:bg-slate-200 text-slate-700 font-bold text-sm flex flex-col items-center leading-tight transition">
+                <span class="text-[11px] font-semibold text-slate-400" id="fcIvUnlearned">&lt;1 phút</span>
+                <span>Không thuộc</span>
+              </button>
+              <button data-action="fc-rate" data-status="medium" class="py-2.5 rounded-xl bg-amber-100 active:bg-amber-200 text-amber-800 font-bold text-sm flex flex-col items-center leading-tight transition">
+                <span class="text-[11px] font-semibold text-amber-600" id="fcIvMedium">&lt;5 phút</span>
+                <span>Thuộc vừa</span>
+              </button>
+              <button data-action="fc-rate" data-status="mastered" class="py-2.5 rounded-xl bg-wine-700 active:bg-wine-800 text-white font-bold text-sm flex flex-col items-center leading-tight transition">
+                <span class="text-[11px] font-semibold text-wine-200">Xong</span>
+                <span>Đã thuộc</span>
+              </button>
+            </div>
+          </div>
+          <p class="hidden sm:block text-center text-[11px] text-slate-400 mt-2">Phím tắt: Space lật thẻ • 1 Không thuộc • 2 Thuộc vừa • 3 Đã thuộc • Z hoàn tác</p>
+        </div>
+      </div>
+
+      <!-- Session complete -->
+      <div id="fcCompleteBox" class="hidden bg-white rounded-3xl p-6 text-center border border-wine-100 shadow-sm space-y-4">
+        <div class="w-16 h-16 rounded-2xl bg-wine-50 text-wine-700 text-3xl flex items-center justify-center mx-auto"><i class="fa-solid fa-award"></i></div>
+        <h3 class="text-xl font-extrabold text-slate-800">Chúc mừng! Đã học xong lượt này</h3>
+        <p id="fcCompleteSummary" class="text-sm text-slate-600"></p>
+        <div class="flex flex-col gap-2 pt-1">
+          <button data-action="fc-start-weak-quiz" class="w-full py-3.5 rounded-2xl bg-wine-700 text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-[.98] transition">
+            <i class="fa-solid fa-bolt"></i> Trắc nghiệm từ chưa vững
+          </button>
+          <button data-action="fc-restart" class="w-full py-3.5 rounded-2xl bg-slate-100 text-slate-700 font-bold text-sm active:scale-[.98] transition">Học lại từ đầu</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 3. QUIZ ===== -->
+    <div id="activity-quiz" class="hidden space-y-3">
+      <div class="bg-white rounded-2xl p-3 border border-wine-100 shadow-sm space-y-2">
+        <div class="grid grid-cols-2 gap-2">
+          <select id="quizTypeSelect" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-wine-400">
+            <option value="mixed">🔀 Trộn 3 dạng</option>
+            <option value="zh-vi">Hán ➔ Nghĩa</option>
+            <option value="vi-zh">Nghĩa ➔ Hán</option>
+            <option value="pinyin-vizh">Pinyin ➔ Hán & Nghĩa</option>
+          </select>
+          <select id="quizScopeSelect" class="w-full px-3 py-2.5 rounded-xl bg-wine-50 border border-wine-200 text-sm font-semibold text-wine-800 focus:outline-none focus:ring-2 focus:ring-wine-400">
+            <option value="weak_priority">🎯 Ưu tiên từ yếu</option>
+            <option value="weak_only">🔥 Chỉ từ yếu</option>
+            <option value="all">📚 Tất cả từ bài</option>
+            <option value="global_weak">🌍 Từ yếu toàn môn</option>
+          </select>
+        </div>
+        <button data-action="quiz-init" class="w-full py-2 rounded-xl bg-slate-100 text-slate-600 text-xs font-bold flex items-center justify-center gap-1.5 active:scale-[.98] transition">
+          <i class="fa-solid fa-rotate"></i> Tạo lượt mới
+        </button>
+      </div>
+
+      <div id="quizActiveCard" class="bg-white rounded-3xl p-4 border border-wine-100 shadow-sm space-y-4">
+        <div class="space-y-2">
+          <div class="flex items-center justify-between text-[11px] font-bold gap-2">
+            <span id="quizQueueCounter" class="text-wine-700 bg-wine-50 px-2.5 py-1 rounded-full">Còn lại: 0</span>
+            <div class="flex items-center gap-1.5">
+              <span id="quizRetryTag" class="hidden px-2.5 py-1 rounded-full bg-wine-700 text-white"><i class="fa-solid fa-repeat"></i> Làm lại</span>
+              <span id="quizWordMasteryTag" class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">—</span>
+            </div>
+          </div>
+          <div class="w-full h-1.5 bg-wine-50 rounded-full overflow-hidden">
+            <div id="quizProgressBar" class="bg-wine-700 h-full transition-all duration-300" style="width:0%"></div>
+          </div>
+        </div>
+
+        <div class="text-center py-2 space-y-2">
+          <span id="quizModeBadge" class="inline-block px-3 py-0.5 rounded-full bg-wine-50 text-wine-700 font-bold text-[11px] uppercase tracking-wider">Hán ➔ Nghĩa</span>
+          <div id="quizPromptMain" class="text-5xl font-bold text-slate-900 chinese-text pt-1 break-words"></div>
+          <div id="quizPromptSub" class="text-xs text-slate-400"></div>
+          <button data-action="quiz-speak" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold active:scale-95 transition">
+            <i class="fa-solid fa-volume-high pointer-events-none"></i> Nghe
+          </button>
+        </div>
+
+        <div id="quizOptionsGrid" class="grid grid-cols-1 gap-2.5"></div>
+
+        <div id="quizFeedbackBox" class="hidden rounded-2xl p-3.5 border text-sm space-y-2">
+          <div id="quizFeedbackHeader" class="font-extrabold flex items-center gap-2"></div>
+          <div id="quizFeedbackDetail" class="text-xs text-slate-600"></div>
+        </div>
+      </div>
+
+      <div id="quizNextWrap" class="hidden sticky-actions">
+        <button data-action="quiz-next" class="w-full py-4 rounded-2xl bg-wine-700 active:bg-wine-800 text-white font-extrabold text-base shadow-lg flex items-center justify-center gap-2 transition">
+          Câu tiếp theo <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <div id="quizCompleteCard" class="hidden bg-white rounded-3xl p-6 text-center border border-wine-100 shadow-sm space-y-4">
+        <div class="w-16 h-16 rounded-2xl bg-wine-50 text-wine-700 text-3xl flex items-center justify-center mx-auto"><i class="fa-solid fa-trophy"></i></div>
+        <h3 class="text-xl font-extrabold text-slate-800">Hoàn thành phiên luyện tập!</h3>
+        <p id="quizCompleteStats" class="text-sm text-slate-600"></p>
+        <div class="bg-wine-50 border border-wine-100 rounded-2xl p-3.5 text-xs text-wine-900 text-left">
+          <b><i class="fa-solid fa-circle-check"></i> Ghi nhớ thông minh:</b> Câu chọn sai được lặp lại cho đến khi bạn làm đúng. Mức độ thuộc từ đã được cập nhật.
+        </div>
+        <div class="flex flex-col gap-2">
+          <button data-action="quiz-init" class="w-full py-3.5 rounded-2xl bg-wine-700 text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-[.98] transition"><i class="fa-solid fa-rotate"></i> Luyện thêm lượt nữa</button>
+          <button data-action="switch-activity" data-activity="reading" class="w-full py-3.5 rounded-2xl bg-slate-100 text-slate-700 font-bold text-sm flex items-center justify-center gap-2 active:scale-[.98] transition"><i class="fa-solid fa-book-open-reader"></i> Sang Bài khóa</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 4. READING ===== -->
+    <div id="activity-reading" class="hidden space-y-4">
+      <div class="bg-white rounded-2xl p-3 border border-wine-100 shadow-sm space-y-2.5">
+        <p class="text-xs text-slate-600"><i class="fa-regular fa-lightbulb text-amber-500"></i> <span class="hidden md:inline">Rê chuột lên</span><span class="md:hidden">Chạm vào</span> <span class="underline decoration-dotted decoration-wine-500 text-wine-700 font-semibold">bất kỳ từ nào</span> để xem pinyin & nghĩa tiếng Việt.</p>
+        <div class="grid grid-cols-2 gap-2">
+          <button data-action="toggle-bilingual" id="toggleBilingualBtn" class="py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition"></button>
+          <button data-action="speak-passage" class="py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 active:scale-[.98] transition">
+            <i class="fa-solid fa-volume-high"></i> Đọc cả bài
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-3xl p-4 border border-wine-100 shadow-sm space-y-4">
+        <div class="border-b border-wine-50 pb-3">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-wine-500">Bài khóa song ngữ · 课文</span>
+          <h3 id="readingPassageTitle" class="text-lg font-bold text-slate-800 chinese-text mt-1 leading-snug"></h3>
+          <p id="readingPassageSub" class="text-xs text-slate-500 mt-0.5"></p>
+        </div>
+        <div id="readingParagraphsContainer" class="space-y-4"></div>
+      </div>
+
+      <div class="bg-white rounded-3xl p-4 border border-wine-100 shadow-sm space-y-5">
+        <div class="flex items-center justify-between gap-2 border-b border-wine-50 pb-3">
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-wine-500">Luyện tập · 练习</span>
+            <h3 class="text-base font-extrabold text-slate-800 mt-0.5">Đọc hiểu & Điền từ</h3>
+          </div>
+          <button data-action="reset-reading-ex" class="px-3 py-2 rounded-xl bg-slate-100 text-xs font-bold text-slate-600 shrink-0 active:scale-95 transition">Làm lại</button>
+        </div>
+        <div class="space-y-3">
+          <h4 class="text-sm font-extrabold text-slate-700 flex items-center gap-2">
+            <span class="w-6 h-6 rounded-lg bg-wine-700 text-white flex items-center justify-center text-xs serif-zh">一</span> Chọn đáp án đúng
+          </h4>
+          <div id="readingMcqContainer" class="space-y-3"></div>
+        </div>
+        <div class="space-y-3 pt-4 border-t border-wine-50">
+          <h4 class="text-sm font-extrabold text-slate-700 flex items-center gap-2">
+            <span class="w-6 h-6 rounded-lg bg-wine-700 text-white flex items-center justify-center text-xs serif-zh">二</span> Chọn từ điền vào chỗ trống
+          </h4>
+          <div id="readingFillContainer" class="space-y-3"></div>
+        </div>
+      </div>
+      <div id="nextLessonBox"></div>
+    </div>
+  </section>
+</main>
+
+<!-- ===== BOTTOM TAB BAR (lesson) ===== -->
+<nav id="bottomNav" class="hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur border-t border-wine-100 safe-bottom">
+  <div class="max-w-3xl mx-auto grid grid-cols-5">
+    <button data-action="switch-activity" data-activity="vocab" id="tabBtn-vocab" class="tab-btn py-2 flex flex-col items-center gap-0.5">
+      <i class="fa-solid fa-list-ul text-lg pointer-events-none"></i><span class="text-[11px] font-bold pointer-events-none">Từ vựng</span>
+    </button>
+    <button data-action="switch-activity" data-activity="grammar" id="tabBtn-grammar" class="tab-btn py-2 flex flex-col items-center gap-0.5">
+      <i class="fa-solid fa-spell-check text-lg pointer-events-none"></i><span class="text-[11px] font-bold pointer-events-none">Ngữ pháp</span>
+    </button>
+    <button data-action="switch-activity" data-activity="flashcard" id="tabBtn-flashcard" class="tab-btn py-2 flex flex-col items-center gap-0.5">
+      <i class="fa-solid fa-layer-group text-lg pointer-events-none"></i><span class="text-[11px] font-bold pointer-events-none">Thẻ bài</span>
+    </button>
+    <button data-action="switch-activity" data-activity="quiz" id="tabBtn-quiz" class="tab-btn py-2 flex flex-col items-center gap-0.5">
+      <i class="fa-solid fa-clipboard-check text-lg pointer-events-none"></i><span class="text-[11px] font-bold pointer-events-none">Luyện tập</span>
+    </button>
+    <button data-action="switch-activity" data-activity="reading" id="tabBtn-reading" class="tab-btn py-2 flex flex-col items-center gap-0.5">
+      <i class="fa-solid fa-book-open-reader text-lg pointer-events-none"></i><span class="text-[11px] font-bold pointer-events-none">Bài khóa</span>
+    </button>
+  </div>
+</nav>
+
+<!-- ===== HOVER TOOLTIP (reading, desktop) ===== -->
+<div id="wordTooltip" class="fixed z-50 hidden bg-white rounded-2xl shadow-2xl border-2 border-wine-700 p-3.5 w-[240px]">
+  <div class="flex items-start justify-between gap-2">
+    <div class="min-w-0">
+      <div id="tipHanzi" class="text-2xl font-bold text-slate-900 chinese-text leading-tight"></div>
+      <div id="tipPinyin" class="text-sm font-semibold text-wine-600"></div>
+    </div>
+    <button data-action="tip-speak" class="w-8 h-8 rounded-full bg-wine-700 text-white flex items-center justify-center text-xs shrink-0" aria-label="Nghe">
+      <i class="fa-solid fa-volume-high pointer-events-none"></i>
+    </button>
+  </div>
+  <div id="tipMeaning" class="text-sm font-bold text-slate-800 mt-2 pt-2 border-t border-wine-100"></div>
+  <div id="tipStatusRow" class="mt-2 pt-2 border-t border-slate-100 grid grid-cols-3 gap-1">
+    <button data-action="tip-status" data-status="unlearned" class="tip-st py-1 rounded-md text-[10px] font-bold">Chưa thuộc</button>
+    <button data-action="tip-status" data-status="medium" class="tip-st py-1 rounded-md text-[10px] font-bold">Vừa</button>
+    <button data-action="tip-status" data-status="mastered" class="tip-st py-1 rounded-md text-[10px] font-bold">Thuộc</button>
+  </div>
+</div>
+
+<!-- ===== WORD BOTTOM SHEET (reading) ===== -->
+<div id="sheetBackdrop" data-action="close-sheets" class="backdrop fixed inset-0 z-40 bg-black/40"></div>
+<div id="wordSheet" class="sheet fixed bottom-0 inset-x-0 z-50 safe-bottom">
+  <div class="max-w-3xl mx-auto bg-white rounded-t-3xl shadow-2xl p-5 pt-3">
+    <div class="w-10 h-1.5 rounded-full bg-slate-200 mx-auto mb-4"></div>
+    <div class="flex items-start justify-between gap-3">
+      <div class="min-w-0">
+        <div id="sheetHanzi" class="text-4xl font-bold text-slate-900 chinese-text"></div>
+        <div id="sheetPinyin" class="text-lg font-semibold text-wine-600 mt-1"></div>
+      </div>
+      <button data-action="sheet-speak" class="w-12 h-12 rounded-full bg-wine-700 text-white flex items-center justify-center shrink-0 active:scale-95 transition" aria-label="Nghe">
+        <i class="fa-solid fa-volume-high pointer-events-none"></i>
+      </button>
+    </div>
+    <div id="sheetMeaning" class="text-lg font-bold text-slate-800 mt-3 pt-3 border-t border-slate-100"></div>
+    <div id="sheetStatusRow" class="mt-4 space-y-2">
+      <div class="text-[11px] font-bold text-slate-400 uppercase">Đánh dấu mức độ</div>
+      <div class="grid grid-cols-3 gap-2">
+        <button data-action="sheet-status" data-status="unlearned" class="sheet-st py-2.5 rounded-xl text-xs font-bold">Chưa thuộc</button>
+        <button data-action="sheet-status" data-status="medium" class="sheet-st py-2.5 rounded-xl text-xs font-bold">Thuộc vừa</button>
+        <button data-action="sheet-status" data-status="mastered" class="sheet-st py-2.5 rounded-xl text-xs font-bold">Đã thuộc</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TÀI KHOẢN (SHEET) ===== -->
+<div id="accountSheet" class="sheet fixed bottom-0 inset-x-0 z-50 safe-bottom">
+  <div class="max-w-3xl mx-auto bg-white rounded-t-3xl shadow-2xl p-5 pt-3">
+    <div class="w-10 h-1.5 rounded-full bg-slate-200 mx-auto mb-4"></div>
+    <div id="accountSheetBody"></div>
+  </div>
+</div>
+<!-- ===== CHI TIẾT SINH VIÊN (GIẢNG VIÊN) ===== -->
+<div id="studentSheet" class="sheet fixed bottom-0 inset-x-0 z-50 safe-bottom">
+  <div class="max-w-3xl mx-auto bg-white rounded-t-3xl shadow-2xl p-5 pt-3 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-3"><div class="w-10 h-1.5 rounded-full bg-slate-200 mx-auto"></div></div>
+    <button data-action="close-sheets" class="absolute right-4 mt-[-28px] w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center" style="right:max(1rem, calc(50% - 24rem + 1rem))"><i class="fa-solid fa-xmark pointer-events-none"></i></button>
+    <div id="studentSheetBody"></div>
+  </div>
+</div>
+
+<!-- ===== ADD WORD SHEET ===== -->
+<div id="addWordModal" class="sheet fixed bottom-0 inset-x-0 z-50 safe-bottom">
+  <div class="max-w-3xl mx-auto bg-white rounded-t-3xl shadow-2xl p-5 pt-3 max-h-[88vh] overflow-y-auto">
+    <div class="w-10 h-1.5 rounded-full bg-slate-200 mx-auto mb-3"></div>
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+      <h3 class="text-lg font-extrabold text-slate-800">Thêm từ vựng mới</h3>
+      <button data-action="close-sheets" class="w-9 h-9 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center"><i class="fa-solid fa-xmark pointer-events-none"></i></button>
+    </div>
+    <div class="space-y-3 text-sm pt-3">
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1">Bài học</label>
+        <select id="newWordLessonSelect" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-wine-400"></select>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Chữ Hán *</label>
+          <input id="newWordHanzi" type="text" placeholder="鼓励" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-base chinese-text focus:outline-none focus:ring-2 focus:ring-wine-400">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Pinyin *</label>
+          <input id="newWordPinyin" type="text" placeholder="gǔlì" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-wine-400">
+        </div>
+      </div>
+      <div class="grid grid-cols-3 gap-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Từ loại</label>
+          <input id="newWordPos" type="text" placeholder="Động từ" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-wine-400">
+        </div>
+        <div class="col-span-2">
+          <label class="block text-xs font-bold text-slate-600 mb-1">Nghĩa tiếng Việt *</label>
+          <input id="newWordMeaning" type="text" placeholder="Cổ vũ, khích lệ" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-wine-400">
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1">Câu ví dụ tiếng Trung</label>
+        <input id="newWordExZh" type="text" placeholder="在大家的帮助和鼓励下……" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-base chinese-text focus:outline-none focus:ring-2 focus:ring-wine-400">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1">Nghĩa câu ví dụ</label>
+        <input id="newWordExVi" type="text" placeholder="Dưới sự giúp đỡ và cổ vũ của mọi người…" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-wine-400">
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-2 pt-4">
+      <button data-action="close-sheets" class="py-3 rounded-xl bg-slate-100 text-slate-600 font-bold text-sm">Hủy</button>
+      <button data-action="save-new-word" class="py-3 rounded-xl bg-wine-700 text-white font-bold text-sm">Lưu từ vựng</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toastBox" class="fixed left-1/2 -translate-x-1/2 z-[60] hidden bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-lg text-xs font-semibold items-center gap-2 max-w-[90vw]" style="top: calc(64px + env(safe-area-inset-top));">
+  <i class="fa-solid fa-circle-check text-wine-300"></i>
+  <span id="toastMessage"></span>
+</div>
+
+<script src="config.js"></script>
+<script src="tu-dien.js"></script>
+<!--SUBJECTS-->
+<script>
+// ============================================================================
+// 1. COURSE DATA
+// ============================================================================
+// THƯ VIỆN: nạp file môn học theo config.js, chuẩn hóa dữ liệu, tách từ tự động
+// ============================================================================
+const CFG = Object.assign({ siteName: 'Thư viện Tiếng Trung', subtitle: '', logoText: '书', subjects: [], defaultSubject: '' }, window.LIBRARY_CONFIG || {});
+window.ZH_SUBJECTS = window.ZH_SUBJECTS || [];
+const ZH_DICT = window.ZH_DICT || { words: {}, chars: {} };
+let SUBJECTS = [];           // các môn đã chuẩn hóa
+let COURSE_DATA = [];        // danh sách bài của môn đang mở
+let currentSubject = null;
+let currentView = 'loading'; // 'library' | 'subject' | 'lesson'
+let loadErrors = [];
+let pendingActivity = null;
+
+// pinyin từng chữ (lấy từ tu-dien.js)
+const CHAR_PY = {};
+Object.keys(ZH_DICT.chars || {}).forEach(function(p) { [].concat(ZH_DICT.chars[p] || '').join('').split('').forEach(function(c) { if (!CHAR_PY[c]) CHAR_PY[c] = p; }); });
+const isHan = function(ch) { return /[㐀-鿿豈-﫿]/.test(ch); };
+
+function loadScriptsSequential(list) {
+  return list.reduce(function(prev, src) {
+    return prev.then(function() {
+      return new Promise(function(resolve) {
+        const before = window.ZH_SUBJECTS.length;
+        const el = document.createElement('script');
+        el.src = src;
+        el.onload = function() { if (window.ZH_SUBJECTS.length === before) loadErrors.push(src + ' (file không có ZH_SUBJECTS.push)'); resolve(); };
+        el.onerror = function() { loadErrors.push(src + ' (không tìm thấy file hoặc file bị lỗi cú pháp)'); resolve(); };
+        document.body.appendChild(el);
+      });
+    });
+  }, Promise.resolve());
+}
+
+function tokenizeText(text, lessonDict) {
+  const out = [];
+  let i = 0, buf = '';
+  const flush = function() { if (buf) { out.push({ t: buf }); buf = ''; } };
+  while (i < text.length) {
+    const ch = text[i];
+    if (!isHan(ch)) { buf += ch; i++; continue; }
+    flush();
+    let found = null;
+    for (let len = Math.min(10, text.length - i); len >= 1; len--) {
+      const w = text.substr(i, len);
+      if (len > 1 && !isHan(w[len - 1])) continue;
+      if (lessonDict[w]) { found = { t: w, p: lessonDict[w].pinyin, m: lessonDict[w].meaning }; break; }
+      if (ZH_DICT.words[w]) { found = { t: w, p: ZH_DICT.words[w][0], m: ZH_DICT.words[w][1] }; break; }
+    }
+    if (!found) found = { t: ch, p: CHAR_PY[ch] || '', m: '' };
+    out.push(found);
+    i += found.t.length;
+  }
+  flush();
+  return out;
+}
+
+function splitSentences(text) {
+  return (text.match(/[^。！？!?；;]+[。！？!?；;”」]*/g) || []).map(function(x) { return x.trim(); }).filter(Boolean);
+}
+
+function normalizeSubject(raw) {
+  const s = Object.assign({ name: raw.id, nameZh: '', code: '', group: 'Môn học', description: '', unitLabel: 'Bài', lessonLabel: 'Bài khóa' }, raw);
+  s.hasUnits = (raw.lessons || []).some(function(l) { return l.unit != null && l.unit !== ''; });
+  if (!s.hasUnits && !raw.lessonLabel) s.lessonLabel = 'Bài';
+  const counters = {};
+  s.lessons = (raw.lessons || []).map(function(l, idx) {
+    const key = s.hasUnits ? String(l.unit) : '_';
+    counters[key] = (counters[key] || 0) + 1;
+    const lid = String(l.id || (s.hasUnits ? ('u' + l.unit + 't' + counters[key]) : ('b' + (idx + 1))));
+    const vocab = (l.vocab || []).map(function(v, i) {
+      if (Array.isArray(v)) v = { hanzi: v[0], pinyin: v[1], pos: v[2], meaning: v[3], exZh: v[4], exVi: v[5] };
+      return { id: s.id + ':' + lid + '_w' + (i + 1), hanzi: String(v.hanzi || v.han || '').trim(), pinyin: v.pinyin || '', pos: v.pos || '', meaning: v.meaning || '', exZh: v.exZh || v.ex || '', exVi: v.exVi || '' };
+    }).filter(function(v) { return v.hanzi; });
+    const vdict = {};
+    vocab.forEach(function(v) { vdict[v.hanzi] = v; });
+    const paragraphs = (l.text || []).map(function(p) {
+      if (typeof p === 'string') p = { zh: p };
+      const zh = (p.zh || '').trim();
+      if (!zh && !p.tokens) return { tokens: [], vi: '' };
+      let tokens;
+      if (p.tokens) {
+        tokens = p.tokens.map(function(t) {
+          if (Array.isArray(t)) t = { t: t[0], p: t[1], m: t[2] };
+          if (t.p && vdict[t.t]) { t.p = vdict[t.t].pinyin; t.m = vdict[t.t].meaning; }
+          return t;
+        });
+      } else tokens = tokenizeText(zh, vdict);
+      return { tokens: tokens, vi: p.vi || '' };
+    });
+    const fullText = paragraphs.map(function(p) { return p.tokens.map(function(t) { return t.t; }).join(''); }).join('');
+    const sentences = splitSentences(fullText);
+    vocab.forEach(function(v) {
+      if (!v.exZh) {
+        const c = sentences.filter(function(x) { return x.indexOf(v.hanzi) >= 0 && x.length <= 80; }).sort(function(a, b) { return a.length - b.length; });
+        if (c.length) v.exZh = c[0];
+      }
+    });
+    const mcqs = (l.questions || []).map(function(q) {
+      return { q: q.q, options: (q.options || []).map(function(o, j) { return /^[A-F]\.\s/.test(o) ? o : String.fromCharCode(65 + j) + '. ' + o; }), correct: Number(q.answer != null ? q.answer : q.correct) || 0, explain: q.explain || '' };
+    });
+    let fills = l.fills;
+    if (!fills) {
+      fills = [];
+      const pool = vocab.map(function(v) { return v.hanzi; });
+      vocab.forEach(function(v) {
+        if (fills.length >= 5 || pool.length < 2) return;
+        const c = sentences.filter(function(x) { return x.indexOf(v.hanzi) >= 0 && x.length >= 6 && x.length <= 70; }).sort(function(a, b) { return a.length - b.length; });
+        if (!c.length) return;
+        const others = shuffleArr(pool.filter(function(x) { return x !== v.hanzi && c[0].indexOf(x) < 0; })).slice(0, 3);
+        if (!others.length) return;
+        fills.push({ sentence: c[0].replace(v.hanzi, '_______'), answer: v.hanzi, options: shuffleArr([v.hanzi].concat(others)) });
+      });
+    }
+    return {
+      id: lid, unit: s.hasUnits ? l.unit : null, no: l.no || counters[key],
+      titleZh: String(l.titleZh || l.title || '').replace(/^《|》$/g, ''), titleVi: l.titleVi || '', note: l.note || '',
+      vocab: vocab, grammar: (l.grammar || []).map(function(g) { return { name: g.name || '', struct: g.struct || '', explain: g.explain || '', exZh: g.exZh || g.ex || '', exVi: g.exVi || '' }; }),
+      reading: { title: '《' + (l.textTitle || String(l.titleZh || l.title || '').replace(/^《|》$/g, '')) + '》', paragraphs: paragraphs, mcqs: mcqs, fills: fills }
+    };
+  });
+  return s;
+}
+
+function subjectWords(s) {
+  const all = [];
+  s.lessons.forEach(function(l) { l.vocab.forEach(function(w) { all.push(Object.assign({}, w, { lessonId: l.id, unit: l.unit })); }); });
+  return all;
+}
+function getSubject(id) { return SUBJECTS.find(function(x) { return x.id === id; }); }
+function setSubject(id) {
+  const s = getSubject(id);
+  if (!s) return false;
+  currentSubject = s;
+  COURSE_DATA = s.lessons;
+  return true;
+}
+
+// ---------- Điều hướng bằng địa chỉ (#/mon/bai) — nút Back của điện thoại hoạt động ----------
+function goLibrary() { location.hash = '#/'; }
+function goSubject(id) { location.hash = '#/' + id; }
+function goLesson(sid, lid, activity) {
+  pendingActivity = activity || null;
+  const h = '#/' + sid + '/' + lid;
+  if (location.hash === h) route(); else location.hash = h;
+}
+function route() {
+  const parts = (location.hash || '').replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
+  closeSheets();
+  if (ACC.requireLogin && !ME) { setViews('library'); showAuth(); renderLibrary(); return; }
+  if (parts[0] === 'gv') { endLessonRun(); showTeacher(); return; }
+  if (parts.length < 2) endLessonRun();
+  if (!parts.length) { if (ME && ME.role === 'teacher' && false) {} showLibrary(); return; }
+  if (!setSubject(parts[0])) { showLibrary(); return; }
+  if (parts.length === 1) { showHome(); return; }
+  const act = pendingActivity; pendingActivity = null;
+  const target = COURSE_DATA.find(function(l) { return l.id === parts[1]; });
+  if (!target) { showHome(); return; }
+  const lk = lessonLockInfo(currentSubject, target);
+  if (lk.locked) { showToast(lockMessage(lk)); endLessonRun(); location.replace('#/' + currentSubject.id); showHome(); return; }
+  const sameRun = lessonRun && lessonRun.key === lessonKeyOf(currentSubject, target);
+  openLesson(parts[1], act || 'vocab');
+  if (!sameRun) startLessonRun();
+  renderLessonScoreBadge();
+  pushStatus();
+}
+
+function setViews(v) {
+  currentView = v;
+  ['loadingView', 'libraryView', 'homeView', 'lessonView', 'teacherView'].forEach(function(id) { document.getElementById(id).classList.add('hidden'); });
+  document.getElementById({ library: 'libraryView', subject: 'homeView', lesson: 'lessonView', teacher: 'teacherView' }[v]).classList.remove('hidden');
+  document.getElementById('backBtn').classList.toggle('hidden', v === 'library' || v === 'teacher');
+  document.getElementById('logoBox').classList.toggle('hidden', !(v === 'library' || v === 'teacher'));
+  document.getElementById('addWordBtn').classList.toggle('hidden', v === 'library' || v === 'teacher');
+  document.getElementById('bottomNav').classList.toggle('hidden', v !== 'lesson');
+  document.getElementById('mainEl').classList.toggle('pb-nav', v === 'lesson');
+}
+
+function subjectStats(s) {
+  const w = subjectWords(s);
+  const c = countStatuses(w);
+  return { total: w.length, c: c, pct: Math.round(((c.m + c.med * 0.5) / (w.length || 1)) * 100) };
+}
+
+function showLibrary() {
+  setViews('library');
+  currentSubject = null;
+  document.getElementById('headerTitle').textContent = CFG.siteName;
+  document.getElementById('headerSubtitle').textContent = SUBJECTS.length + ' môn học chuyên ngành';
+  renderLibrary();
+  window.scrollTo({ top: 0 });
+  pushStatus();
+}
+
+function renderLibrary() {
+  document.getElementById('libTitle').textContent = CFG.siteName;
+  document.getElementById('libSubtitle').textContent = CFG.subtitle || '';
+  let lessons = 0, words = 0, mastered = 0;
+  SUBJECTS.forEach(function(s) { lessons += s.lessons.length; const st = subjectStats(s); words += st.total; mastered += st.c.m; });
+  document.getElementById('libCountSubjects').textContent = SUBJECTS.length;
+  document.getElementById('libCountLessons').textContent = lessons;
+  document.getElementById('libCountMastered').textContent = mastered + '/' + words;
+  document.getElementById('headerMasteryBadge').textContent = Math.round(mastered / (words || 1) * 100) + '%';
+  document.getElementById('libLoadErrors').innerHTML = loadErrors.length ?
+    '<div class="rounded-2xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900"><b><i class="fa-solid fa-triangle-exclamation"></i> Không nạp được một số môn:</b><br>' + loadErrors.map(esc).join('<br>') + '<br>Hãy kiểm tra lại tên file trong config.js và dấu phẩy, dấu ngoặc trong file môn học.</div>' : '';
+
+  const q = (document.getElementById('libSearchInput').value || '').trim().toLowerCase();
+  const groups = [];
+  SUBJECTS.forEach(function(s) { if (groups.indexOf(s.group) < 0) groups.push(s.group); });
+  let html = '';
+  groups.forEach(function(g) {
+    const subs = SUBJECTS.filter(function(s) { return s.group === g; });
+    const cards = subs.map(function(s) {
+      let hits = [];
+      if (q) {
+        const meta = (s.name + ' ' + s.nameZh + ' ' + s.code + ' ' + s.description).toLowerCase();
+        s.lessons.forEach(function(l) {
+          const inTitle = (l.titleZh + ' ' + l.titleVi).toLowerCase().indexOf(q) >= 0;
+          const vw = l.vocab.filter(function(v) { return (v.hanzi + ' ' + v.pinyin + ' ' + v.meaning).toLowerCase().indexOf(q) >= 0; });
+          if (inTitle || vw.length) hits.push({ l: l, vw: vw });
+        });
+        if (meta.indexOf(q) < 0 && !hits.length) return '';
+      }
+      const st = subjectStats(s);
+      const hitHtml = hits.slice(0, 6).map(function(h) {
+        return '<button data-action="open-lesson-of" data-sid="' + esc(s.id) + '" data-lid="' + esc(h.l.id) + '" class="w-full text-left px-3 py-2 rounded-xl bg-wine-50/60 border border-wine-100 text-xs active:bg-wine-100">' +
+          '<span class="font-bold text-wine-800 pointer-events-none">' + esc(lessonLabelFor(s, h.l)) + ' · 《' + esc(h.l.titleZh) + '》</span>' +
+          (h.vw.length ? '<span class="block text-slate-500 chinese-text pointer-events-none">' + h.vw.slice(0, 4).map(function(v) { return esc(v.hanzi) + ' – ' + esc(v.meaning); }).join('; ') + '</span>' : '') + '</button>';
+      }).join('');
+      return '<div class="bg-white rounded-3xl border border-wine-100 shadow-sm overflow-hidden">' +
+        '<button data-action="open-subject" data-sid="' + esc(s.id) + '" class="w-full text-left p-4 active:bg-wine-50/40 transition">' +
+          '<div class="flex items-start gap-3 pointer-events-none">' +
+            '<div class="w-14 h-14 rounded-2xl text-white flex items-center justify-center shrink-0 serif-zh text-xl font-bold" style="background: linear-gradient(140deg,#4a1220,#7d1f33 60%,#a33a51)">' + esc(s.logo || subjectLogo(s)) + '</div>' +
+            '<div class="flex-1 min-w-0">' +
+              '<div class="flex items-center gap-2 flex-wrap"><h4 class="font-extrabold text-slate-900 text-lg leading-tight">' + esc(s.name) + '</h4>' +
+              (s.code ? '<span class="px-2 py-0.5 rounded-md bg-wine-50 text-wine-700 text-[10px] font-bold border border-wine-100">' + esc(s.code) + '</span>' : '') + '</div>' +
+              (s.nameZh ? '<div class="text-sm text-wine-600 chinese-text">' + esc(s.nameZh) + '</div>' : '') +
+              (s.description ? '<p class="text-xs text-slate-500 mt-1 leading-snug">' + esc(s.description) + '</p>' : '') +
+            '</div>' +
+            '<i class="fa-solid fa-chevron-right text-wine-300 mt-4"></i>' +
+          '</div>' +
+          '<div class="mt-3 pointer-events-none">' +
+            '<div class="flex items-center justify-between text-[11px] mb-1"><span class="text-slate-500">' + s.lessons.length + ' bài · ' + st.total + ' từ · ' + st.c.m + ' đã thuộc</span><span class="font-extrabold text-wine-700">' + st.pct + '%</span></div>' +
+            '<div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden flex"><div class="bg-wine-700 h-full" style="width:' + (st.c.m / (st.total || 1) * 100) + '%"></div><div class="bg-amber-400 h-full" style="width:' + (st.c.med / (st.total || 1) * 100) + '%"></div></div>' +
+          '</div>' +
+        '</button>' +
+        (hitHtml ? '<div class="px-4 pb-4 space-y-1.5">' + hitHtml + '</div>' : '') +
+      '</div>';
+    }).join('');
+    if (cards.replace(/\s/g, '')) {
+      html += '<div class="space-y-2"><div class="px-1 flex items-center gap-2"><span class="w-1.5 h-4 rounded-full bg-wine-700"></span><h3 class="text-sm font-extrabold text-slate-700 uppercase tracking-wide">' + esc(g) + '</h3></div>' +
+        '<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">' + cards + '</div></div>';
+    }
+  });
+  if (!SUBJECTS.length) html = '<div class="bg-white rounded-2xl p-8 text-center text-sm text-slate-500 border border-wine-100">Chưa có môn học nào. Hãy thêm file môn học vào danh sách <b>subjects</b> trong <b>config.js</b>.</div>';
+  else if (!html) html = '<div class="bg-white rounded-2xl p-8 text-center text-sm text-slate-400 border border-wine-100">Không tìm thấy kết quả phù hợp.</div>';
+  document.getElementById('subjectsGrid').innerHTML = html;
+}
+
+function subjectLogo(s) {
+  const num = (String(s.name).match(/\d+/) || [''])[0];
+  const zh = String(s.nameZh || '').replace(/[（(].*$/, '');
+  if (zh) return zh.slice(-1) + num;
+  return String(s.name).slice(0, 2);
+}
+
+function lessonLabelFor(s, l) {
+  return s.hasUnits ? (s.unitLabel + ' ' + l.unit + ' · ' + s.lessonLabel + ' ' + l.no) : (s.lessonLabel + ' ' + l.no);
+}
+// ============================================================================
+// 2. STATE & STORAGE
+// ============================================================================
+const STORAGE_KEY_MASTERY = "zhlib_mastery_v1";
+const STORAGE_KEY_CUSTOM_WORDS = "zhlib_custom_words_v1";
+const STORAGE_KEY_PREFS = "zhlib_prefs_v1";
+
+let masteryMap = {};
+let currentLessonId = null;
+let currentActivity = 'vocab';
+let vocabFilter = 'all';
+
+// Flashcard (Anki-style) state
+let fcQueue = [];        // [{word, hard, seen}]
+let fcTotal = 0;
+let fcDone = 0;
+let fcRevealed = false;   // đã xem mặt sau ít nhất 1 lần
+let fcFlipped = false;    // đang hiển thị mặt sau
+let fcHistory = [];
+let fcFrontMode = 'hanzi';
+let fcWeakOnly = false;
+let fcAutoAudio = true;
+let fcSessionStats = { unlearned: 0, medium: 0, mastered: 0 };
+
+// Quiz state
+let quizQueue = [];
+let quizCompletedCount = 0;
+let quizMistakeCount = 0;
+let currentQuizItem = null;
+let quizAnswered = false;
+
+// Reading state
+let showBilingual = true;
+let sheetWordId = null;
+let sheetText = "";
+
+function loadState() {
+  try {
+    const m = localStorage.getItem(masteryStorageKey());
+    if (m) masteryMap = JSON.parse(m) || {};
+    else {
+      // chuyển tiến độ từ bản "Học Đọc 3" cũ sang thư viện
+      const old = JSON.parse(localStorage.getItem('doc3_vocab_mastery_v2') || 'null');
+      if (old) { Object.keys(old).forEach(function(k) { masteryMap['doc-3:' + k] = old[k]; }); localStorage.setItem(STORAGE_KEY_MASTERY, JSON.stringify(masteryMap)); }
+    }
+    const c = localStorage.getItem(STORAGE_KEY_CUSTOM_WORDS);
+    if (c) {
+      JSON.parse(c).forEach(function(cw) {
+        const subj = getSubject(cw.subjectId);
+        const lesson = subj && subj.lessons.find(function(l) { return l.id === cw.lessonId; });
+        if (lesson && !lesson.vocab.some(function(v) { return v.id === cw.word.id; })) lesson.vocab.push(cw.word);
+      });
+    }
+    const p = localStorage.getItem(STORAGE_KEY_PREFS);
+    if (p) {
+      const prefs = JSON.parse(p) || {};
+      if (prefs.fcFrontMode) fcFrontMode = prefs.fcFrontMode;
+      if (typeof prefs.fcAutoAudio === 'boolean') fcAutoAudio = prefs.fcAutoAudio;
+      if (typeof prefs.showBilingual === 'boolean') showBilingual = prefs.showBilingual;
+    }
+  } catch (e) { console.error(e); }
+}
+
+function savePrefs() {
+  try { localStorage.setItem(STORAGE_KEY_PREFS, JSON.stringify({ fcFrontMode: fcFrontMode, fcAutoAudio: fcAutoAudio, showBilingual: showBilingual })); } catch (e) {}
+}
+
+function saveMasteryState() {
+  try { localStorage.setItem(masteryStorageKey(), JSON.stringify(masteryMap)); } catch (e) {}
+  scheduleMasterySync();
+  if (currentView === 'lesson') updateLessonRecord({});
+  if (currentView === 'library') renderLibrary(); else if (currentSubject && currentView !== 'teacher') updateAllMasteryUI();
+}
+
+function getWordStatus(id) { return masteryMap[id] || 'unlearned'; }
+
+function setWordStatus(id, status, notify) {
+  masteryMap[id] = status;
+  saveMasteryState();
+  if (notify) {
+    const labels = { mastered: "Đã đánh dấu: Đã thuộc", medium: "Đã đánh dấu: Thuộc vừa", unlearned: "Đã đánh dấu: Chưa thuộc" };
+    showToast(labels[status]);
+  }
+}
+
+const STATUS_STYLE = {
+  mastered: { label: "Đã thuộc", badge: "bg-wine-700 text-white" },
+  medium: { label: "Thuộc vừa", badge: "bg-amber-100 text-amber-800" },
+  unlearned: { label: "Chưa thuộc", badge: "bg-slate-100 text-slate-600" }
+};
+
+// ============================================================================
+// 3. SPEECH
+// ============================================================================
+function speakChinese(text) {
+  if (!text) return;
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'zh-CN';
+    u.rate = 0.9;
+    window.speechSynthesis.speak(u);
+  } else {
+    showToast("Trình duyệt không hỗ trợ đọc âm thanh.");
+  }
+}
+
+// ============================================================================
+// 4. HELPERS
+// ============================================================================
+function esc(str) {
+  return String(str == null ? '' : str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function shuffleArr(a) {
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; }
+  return a;
+}
+function getAllCourseWords() {
+  const all = [];
+  if (!currentSubject) return all;
+  return subjectWords(currentSubject);
+}
+function getCurrentLesson() { return COURSE_DATA.find(function(l) { return l.id === currentLessonId; }); }
+function countStatuses(words) {
+  let m = 0, med = 0, u = 0;
+  words.forEach(function(w) { const s = getWordStatus(w.id); if (s === 'mastered') m++; else if (s === 'medium') med++; else u++; });
+  return { m: m, med: med, u: u };
+}
+function zhFontSize(text, big) {
+  const n = (text || '').length;
+  if (big) return n <= 2 ? 'text-7xl' : n <= 3 ? 'text-6xl' : n <= 4 ? 'text-5xl' : 'text-4xl';
+  return n <= 3 ? 'text-5xl' : n <= 5 ? 'text-4xl' : 'text-3xl';
+}
+
+// ============================================================================
+// 5. HOME / OVERALL PROGRESS
+// ============================================================================
+function updateAllMasteryUI() {
+  const all = getAllCourseWords();
+  const total = all.length || 1;
+  const c = countStatuses(all);
+  const pct = Math.round(((c.m + c.med * 0.5) / total) * 100);
+
+  document.getElementById('headerMasteryBadge').textContent = pct + '%';
+  document.getElementById('overallPercentText').textContent = pct + '%';
+  document.getElementById('countMastered').textContent = c.m;
+  document.getElementById('countMedium').textContent = c.med;
+  document.getElementById('countUnlearned').textContent = c.u;
+  document.getElementById('barMastered').style.width = (c.m / total * 100) + '%';
+  document.getElementById('barMedium').style.width = (c.med / total * 100) + '%';
+  document.getElementById('weakWordsSummaryText').textContent = 'Còn ' + (c.med + c.u) + '/' + all.length + ' từ cần ôn tập trong môn ' + currentSubject.name + '.';
+
+  renderLessonsGrid();
+  if (!document.getElementById('lessonView').classList.contains('hidden')) updateLessonHeaderStats();
+}
+
+function lessonLabel(l) { return lessonLabelFor(currentSubject, l); }
+
+function renderLessonsGrid() {
+  document.getElementById('totalLessonsBadge').textContent = COURSE_DATA.length + ' ' + currentSubject.lessonLabel.toLowerCase();
+  const units = [];
+  COURSE_DATA.forEach(function(l) { if (units.indexOf(l.unit) < 0) units.push(l.unit); });
+  const flat = !currentSubject.hasUnits;
+  document.getElementById('lessonsGrid').innerHTML = units.map(function(u) {
+    const ls = COURSE_DATA.filter(function(l) { return l.unit === u; });
+    const allW = []; ls.forEach(function(l) { l.vocab.forEach(function(w) { allW.push(w); }); });
+    const uc = countStatuses(allW);
+    const upct = Math.round(((uc.m + uc.med * 0.5) / (allW.length || 1)) * 100);
+    return '<div class="space-y-2">' + (flat ? '' :
+      '<div class="flex items-center justify-between px-1">' +
+        '<div class="flex items-center gap-2">' +
+          '<span class="px-2.5 py-1 rounded-lg bg-wine-700 text-white text-xs font-extrabold">' + esc(currentSubject.unitLabel.toUpperCase()) + ' ' + u + '</span>' +
+          '<span class="text-xs text-slate-500">' + ls.length + ' ' + esc(currentSubject.lessonLabel.toLowerCase()) + ' · ' + allW.length + ' từ</span>' +
+        '</div>' +
+        '<span class="text-xs font-extrabold text-wine-700">' + upct + '%</span>' +
+      '</div>') +
+      '<div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">' + ls.map(function(lesson) {
+        const total = lesson.vocab.length || 1;
+        const c = countStatuses(lesson.vocab);
+        const pct = Math.round(((c.m + c.med * 0.5) / total) * 100);
+        const lk = lessonLockInfo(currentSubject, lesson);
+        const rec = (ME && ME.role === 'student') ? getRec(currentSubject, lesson) : null;
+        return '<button data-action="open-lesson" data-lesson-id="' + lesson.id + '" class="w-full text-left rounded-2xl p-3.5 border shadow-sm active:scale-[.99] transition ' + (lk.locked ? 'bg-slate-50 border-slate-200 opacity-75' : 'bg-white border-wine-100 active:bg-wine-50/40') + '">' +
+          (lk.locked || rec ? '<div class="flex items-center justify-between mb-2 pointer-events-none">' +
+            (lk.locked ? '<span class="text-[11px] font-bold text-slate-500"><i class="fa-solid fa-lock"></i> ' + (lk.reason === 'seq' ? 'Hoàn thành bài trước để mở' : 'Giảng viên đang khóa') + '</span>' :
+              (rec && rec.completed ? '<span class="text-[11px] font-bold text-wine-700"><i class="fa-solid fa-circle-check"></i> Đã hoàn thành</span>' : '<span class="text-[11px] font-bold text-slate-500"><i class="fa-solid fa-lock-open"></i> Đang mở</span>')) +
+            (rec && (rec.best || rec.attempts) ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-extrabold ' + (rec.completed ? 'bg-wine-700 text-white' : 'bg-wine-50 text-wine-800 border border-wine-100') + '">' + (rec.best || 0) + ' điểm</span>' : '') +
+          '</div>' : '') +
+          '<div class="flex items-start gap-3 pointer-events-none">' +
+            '<div class="w-11 h-11 rounded-xl bg-wine-50 text-wine-700 border border-wine-100 flex flex-col items-center justify-center shrink-0 leading-none">' +
+              '<span class="text-[9px] font-bold uppercase">' + (flat ? 'Bài' : 'Khóa') + '</span><span class="font-black text-lg">' + lesson.no + '</span></div>' +
+            '<div class="flex-1 min-w-0">' +
+              '<h4 class="font-bold text-slate-800 text-[15px] chinese-text leading-snug">《' + esc(lesson.titleZh) + '》</h4>' +
+              '<p class="text-xs text-slate-500 mt-0.5 leading-snug">' + esc(lesson.titleVi) + '</p>' +
+            '</div>' +
+            '<i class="fa-solid fa-chevron-right text-wine-300 text-sm mt-3"></i>' +
+          '</div>' +
+          '<div class="mt-2.5 pointer-events-none">' +
+            '<div class="flex items-center justify-between text-[11px] mb-1">' +
+              '<span class="text-slate-500">' + lesson.vocab.length + ' từ' + (lesson.grammar.length ? ' · ' + lesson.grammar.length + ' ngữ pháp' : '') + ' · ' + c.m + ' đã thuộc</span>' +
+              '<span class="font-extrabold text-wine-700">' + pct + '%</span>' +
+            '</div>' +
+            '<div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden flex">' +
+              '<div class="bg-wine-700 h-full" style="width:' + (c.m / total * 100) + '%"></div>' +
+              '<div class="bg-amber-400 h-full" style="width:' + (c.med / total * 100) + '%"></div>' +
+            '</div>' +
+          '</div>' +
+        '</button>';
+      }).join('') + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ============================================================================
+// 6. NAVIGATION
+// ============================================================================
+function showHome() {
+  setViews('subject');
+  const s = currentSubject;
+  document.getElementById('headerTitle').textContent = s.name;
+  document.getElementById('headerSubtitle').textContent = [s.nameZh, s.code].filter(Boolean).join(' · ') || CFG.siteName;
+  document.getElementById('subjBadgeText').textContent = 'Toàn môn ' + s.name;
+  document.getElementById('subjRoadmapTitle').textContent = 'Lộ trình học ' + s.name;
+  document.getElementById('subjWatermark').textContent = (s.nameZh || '读').slice(0, 1);
+  closeSheets();
+  setTimeout(pushStatus, 0);
+  updateAllMasteryUI();
+  window.scrollTo({ top: 0 });
+}
+
+function openLesson(lessonId, activity) {
+  currentLessonId = String(lessonId);
+  const lesson = getCurrentLesson();
+  if (!lesson) return;
+  setViews('lesson');
+  document.getElementById('headerTitle').textContent = lessonLabel(lesson);
+  document.getElementById('headerSubtitle').textContent = lesson.titleVi;
+  document.getElementById('lessonNumberBox').innerHTML = currentSubject.hasUnits ? '<span class="text-[10px] font-bold leading-none">' + esc(currentSubject.unitLabel.toUpperCase()) + ' ' + lesson.unit + '</span><span class="leading-none">' + lesson.no + '</span>' : '<span class="leading-none">' + lesson.no + '</span>';
+  document.getElementById('lessonTitleZh').textContent = '《' + lesson.titleZh + '》';
+  document.getElementById('lessonTitleVi').textContent = lesson.titleVi;
+  updateLessonHeaderStats();
+  switchActivity(activity || 'vocab');
+}
+
+function updateLessonHeaderStats() {
+  const lesson = getCurrentLesson();
+  if (!lesson) return;
+  const total = lesson.vocab.length || 1;
+  const c = countStatuses(lesson.vocab);
+  document.getElementById('lessonWordCount').textContent = lesson.vocab.length;
+  document.getElementById('lessonMasteredCount').textContent = c.m;
+  document.getElementById('lessonMediumCount').textContent = c.med;
+  document.getElementById('lessonUnlearnedCount').textContent = c.u;
+  document.getElementById('lessonBarMastered').style.width = (c.m / total * 100) + '%';
+  document.getElementById('lessonBarMedium').style.width = (c.med / total * 100) + '%';
+  document.getElementById('lessonPercentBadge').textContent = Math.round(((c.m + c.med * 0.5) / total) * 100) + '%';
+}
+
+function switchActivity(name) {
+  currentActivity = name;
+  closeSheets();
+  ['vocab', 'grammar', 'flashcard', 'quiz', 'reading'].forEach(function(act) {
+    const view = document.getElementById('activity-' + act);
+    const btn = document.getElementById('tabBtn-' + act);
+    if (act === name) {
+      view.classList.remove('hidden');
+      btn.className = 'tab-btn py-2 flex flex-col items-center gap-0.5 text-wine-700';
+    } else {
+      view.classList.add('hidden');
+      btn.className = 'tab-btn py-2 flex flex-col items-center gap-0.5 text-slate-400';
+    }
+  });
+  if (name === 'vocab') renderVocabList();
+  else if (name === 'grammar') renderGrammar();
+  else if (name === 'flashcard') initFlashcards(false);
+  else if (name === 'quiz') initQuizSession();
+  else if (name === 'reading') renderReadingView();
+  window.scrollTo({ top: 0 });
+  if (currentView === 'lesson') pushStatus();
+}
+
+// ============================================================================
+// 7. VOCAB LIST
+// ============================================================================
+function renderVocabChips() {
+  document.querySelectorAll('.vf-chip').forEach(function(ch) {
+    const active = ch.getAttribute('data-filter') === vocabFilter;
+    ch.className = 'vf-chip shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border ' +
+      (active ? 'bg-wine-700 text-white border-wine-700' : 'bg-white text-slate-600 border-slate-200');
+  });
+}
+
+function renderVocabList() {
+  const lesson = getCurrentLesson();
+  if (!lesson) return;
+  renderVocabChips();
+  const q = (document.getElementById('vocabSearchInput').value || '').trim().toLowerCase();
+  const list = lesson.vocab.filter(function(w) {
+    if (vocabFilter !== 'all' && getWordStatus(w.id) !== vocabFilter) return false;
+    if (!q) return true;
+    return w.hanzi.toLowerCase().includes(q) || w.pinyin.toLowerCase().includes(q) || w.meaning.toLowerCase().includes(q);
+  });
+  const box = document.getElementById('vocabListContainer');
+  if (!list.length) {
+    box.innerHTML = '<div class="sm:col-span-2 bg-white rounded-2xl p-8 text-center text-slate-400 text-sm border border-wine-100">Không có từ nào khớp bộ lọc.</div>';
+    return;
+  }
+  box.innerHTML = list.map(function(w) {
+    const st = getWordStatus(w.id);
+    function stBtn(key, label, activeCls) {
+      return '<button data-action="set-status" data-wid="' + w.id + '" data-status="' + key + '" class="flex-1 py-2 rounded-lg text-[11px] font-bold transition ' +
+        (st === key ? activeCls : 'bg-slate-50 text-slate-500') + '">' + label + '</button>';
+    }
+    return '<div class="bg-white rounded-2xl p-3.5 border border-wine-100 shadow-sm space-y-2.5">' +
+      '<div class="flex items-start gap-3">' +
+        '<button data-action="speak-word" data-hanzi="' + esc(w.hanzi) + '" class="w-11 h-11 rounded-xl bg-wine-50 text-wine-700 flex items-center justify-center shrink-0 active:scale-95 transition" aria-label="Nghe"><i class="fa-solid fa-volume-high pointer-events-none"></i></button>' +
+        '<div class="min-w-0 flex-1">' +
+          '<div class="flex items-baseline gap-2 flex-wrap">' +
+            '<span class="text-2xl font-bold text-slate-900 chinese-text">' + esc(w.hanzi) + '</span>' +
+            '<span class="text-sm font-semibold text-wine-600">' + esc(w.pinyin) + '</span>' +
+          '</div>' +
+          '<div class="text-[15px] font-bold text-slate-800 mt-0.5 leading-snug">' + esc(w.meaning) + (w.pos ? ' <span class="text-[11px] font-medium text-slate-400">· ' + esc(w.pos) + '</span>' : '') + '</div>' +
+        '</div>' +
+      '</div>' +
+      (w.exZh ? '<div class="bg-wine-50/50 rounded-xl p-2.5 text-xs border border-wine-50"><div class="font-medium text-slate-700 chinese-text text-sm">' + esc(w.exZh) + '</div><div class="text-slate-500 mt-0.5">' + esc(w.exVi || '') + '</div></div>' : '') +
+      '<div class="flex items-center gap-1.5">' +
+        stBtn('unlearned', 'Chưa thuộc', 'bg-slate-600 text-white') +
+        stBtn('medium', 'Thuộc vừa', 'bg-amber-400 text-amber-950') +
+        stBtn('mastered', 'Đã thuộc', 'bg-wine-700 text-white') +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ============================================================================
+// 8. FLASHCARDS — ANKI STYLE
+//   Show question → tap "Hiện đáp án" → answer appears below → rate:
+//   Không thuộc: card returns after ~2 cards (<1 phút)
+//   Thuộc vừa : card returns after ~5 cards once, the 2nd time it graduates
+//   Đã thuộc   : card graduates (done)
+// ============================================================================
+function initFlashcards(doShuffle) {
+  const lesson = getCurrentLesson();
+  if (!lesson) return;
+  let pool = lesson.vocab.slice();
+  if (fcWeakOnly) {
+    pool = pool.filter(function(w) { return getWordStatus(w.id) !== 'mastered'; });
+    if (!pool.length) {
+      showToast("Bài này đã thuộc hết! Hiển thị toàn bộ từ.");
+      fcWeakOnly = false;
+      pool = lesson.vocab.slice();
+    }
+  }
+  if (doShuffle) shuffleArr(pool);
+  fcQueue = pool.map(function(w) { return { word: w, hard: 0, seen: false }; });
+  fcTotal = fcQueue.length;
+  fcDone = 0;
+  fcRevealed = false;
+  fcFlipped = false;
+  fcHistory = [];
+  fcSessionStats = { unlearned: 0, medium: 0, mastered: 0 };
+  document.getElementById('fcStudyArea').classList.remove('hidden');
+  document.getElementById('fcCompleteBox').classList.add('hidden');
+  updateFcToolbar();
+  renderFlashcard(true);
+}
+
+function updateFcToolbar() {
+  ['hanzi', 'pinyin', 'both', 'meaning'].forEach(function(m) {
+    const b = document.getElementById('fcMode-' + m);
+    b.className = 'fc-mode py-1.5 rounded-lg text-xs font-bold transition ' + (m === fcFrontMode ? 'bg-white text-wine-700 shadow-sm' : 'text-slate-500');
+  });
+  const wb = document.getElementById('fcWeakOnlyBtn');
+  wb.className = 'shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border flex items-center gap-1.5 ' +
+    (fcWeakOnly ? 'bg-wine-700 text-white border-wine-700' : 'bg-white text-slate-700 border-slate-200');
+  document.getElementById('fcFilterLabel').textContent = fcWeakOnly ? 'Chỉ từ chưa vững' : 'Tất cả từ';
+  const ab = document.getElementById('fcAudioBtn');
+  ab.className = 'shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border flex items-center gap-1.5 ' +
+    (fcAutoAudio ? 'bg-wine-50 text-wine-700 border-wine-200' : 'bg-white text-slate-400 border-slate-200');
+  document.getElementById('fcUndoBtn').disabled = fcHistory.length === 0;
+}
+
+function renderFlashcard(animate) {
+  if (!fcQueue.length) { showFlashcardComplete(); return; }
+  const item = fcQueue[0];
+  const w = item.word;
+
+  document.getElementById('fcCountNew').textContent = fcQueue.filter(function(i) { return !i.seen; }).length;
+  document.getElementById('fcCountLearn').textContent = fcQueue.filter(function(i) { return i.seen; }).length;
+  document.getElementById('fcCountDone').textContent = fcDone;
+  document.getElementById('fcProgressBar').style.width = (fcTotal ? fcDone / fcTotal * 100 : 0) + '%';
+
+  const st = getWordStatus(w.id);
+  const badge = document.getElementById('fcCurrentStatusBadge');
+  badge.className = 'px-2.5 py-1 rounded-full text-[11px] font-bold ' + STATUS_STYLE[st].badge;
+  badge.textContent = STATUS_STYLE[st].label;
+
+  const label = document.getElementById('fcFrontLabel');
+  const main = document.getElementById('fcFrontMain');
+  const sub = document.getElementById('fcFrontSub');
+  sub.classList.add('hidden');
+  if (fcFrontMode === 'hanzi') {
+    label.textContent = 'Chữ Hán';
+    main.textContent = w.hanzi;
+    main.className = zhFontSize(w.hanzi, true) + ' font-bold text-slate-900 chinese-text leading-tight break-words';
+  } else if (fcFrontMode === 'pinyin') {
+    label.textContent = 'Pinyin';
+    main.textContent = w.pinyin;
+    main.className = 'text-4xl font-extrabold text-wine-700 leading-tight break-words';
+  } else if (fcFrontMode === 'both') {
+    label.textContent = 'Chữ Hán & Pinyin';
+    main.textContent = w.hanzi;
+    main.className = zhFontSize(w.hanzi, true) + ' font-bold text-slate-900 chinese-text leading-tight break-words';
+    sub.textContent = w.pinyin;
+    sub.classList.remove('hidden');
+  } else {
+    label.textContent = 'Nghĩa tiếng Việt';
+    main.textContent = w.meaning;
+    main.className = 'text-3xl font-extrabold text-slate-900 leading-snug break-words';
+  }
+
+  // Answer section
+  const backHanzi = document.getElementById('fcBackHanzi');
+  backHanzi.textContent = w.hanzi;
+  backHanzi.className = zhFontSize(w.hanzi, false) + ' font-bold text-slate-900 chinese-text';
+  document.getElementById('fcBackPinyin').textContent = w.pinyin;
+  document.getElementById('fcBackMeaning').textContent = w.meaning;
+  document.getElementById('fcBackPos').textContent = w.pos || '';
+  document.getElementById('fcBackPos').classList.toggle('hidden', !w.pos);
+  document.getElementById('fcExampleBox').classList.toggle('hidden', !w.exZh);
+  document.getElementById('fcBackExampleZh').textContent = w.exZh || '';
+  document.getElementById('fcBackExampleVi').textContent = w.exVi || '';
+
+  document.getElementById('fcShowAnswerBtn').classList.toggle('hidden', fcRevealed);
+  document.getElementById('fcFlipSmallBtn').classList.toggle('hidden', !fcRevealed);
+  document.getElementById('fcFlipSmallLabel').textContent = fcFlipped ? 'Lật lại mặt trước' : 'Lật xem mặt sau';
+  document.getElementById('fcRatingButtons').classList.toggle('hidden', !fcRevealed);
+  document.getElementById('fcIvMedium').textContent = item.hard >= 1 ? 'Xong' : '<5 phút';
+
+  const card = document.getElementById('fcCard');
+  if (animate) {
+    // Thẻ mới: về mặt trước ngay lập tức, không chạy hiệu ứng lật
+    card.classList.add('no-anim');
+    card.classList.toggle('flipped', fcFlipped);
+    void card.offsetWidth;
+    card.classList.remove('no-anim');
+    const scene = document.getElementById('fcScene');
+    scene.classList.remove('card-enter'); void scene.offsetWidth; scene.classList.add('card-enter');
+  } else {
+    card.classList.toggle('flipped', fcFlipped);
+  }
+  updateFcToolbar();
+}
+
+function flipFlashcard() {
+  if (!fcQueue.length) return;
+  fcFlipped = !fcFlipped;
+  const firstTime = fcFlipped && !fcRevealed;
+  if (fcFlipped) fcRevealed = true;
+  renderFlashcard(false);
+  if (firstTime && fcAutoAudio) speakChinese(fcQueue[0].word.hanzi);
+}
+
+function revealFlashcard() {
+  if (!fcQueue.length) return;
+  if (!fcFlipped) flipFlashcard();
+}
+
+function rateFlashcard(status) {
+  if (!fcQueue.length) return;
+  if (!fcRevealed) { revealFlashcard(); return; }
+  const item = fcQueue[0];
+  fcHistory.push({
+    queue: fcQueue.map(function(i) { return { word: i.word, hard: i.hard, seen: i.seen }; }),
+    done: fcDone,
+    stats: Object.assign({}, fcSessionStats),
+    wordId: item.word.id,
+    prev: masteryMap[item.word.id]
+  });
+  if (fcHistory.length > 50) fcHistory.shift();
+
+  fcQueue.shift();
+  item.seen = true;
+  fcSessionStats[status]++;
+  if (status === 'unlearned') {
+    item.hard = 0;
+    fcQueue.splice(Math.min(fcQueue.length, 2), 0, item);
+  } else if (status === 'medium') {
+    if (item.hard >= 1) fcDone++;
+    else { item.hard = 1; fcQueue.splice(Math.min(fcQueue.length, 5), 0, item); }
+  } else {
+    fcDone++;
+  }
+  masteryMap[item.word.id] = status;
+  saveMasteryState();
+  fcRevealed = false;
+  fcFlipped = false;
+  renderFlashcard(true);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function undoFlashcard() {
+  const h = fcHistory.pop();
+  if (!h) return;
+  fcQueue = h.queue;
+  fcDone = h.done;
+  fcSessionStats = h.stats;
+  if (h.prev === undefined) delete masteryMap[h.wordId]; else masteryMap[h.wordId] = h.prev;
+  saveMasteryState();
+  fcRevealed = false;
+  fcFlipped = false;
+  document.getElementById('fcStudyArea').classList.remove('hidden');
+  document.getElementById('fcCompleteBox').classList.add('hidden');
+  renderFlashcard(true);
+  showToast("Đã hoàn tác thẻ vừa chấm");
+}
+
+function showFlashcardComplete() {
+  document.getElementById('fcStudyArea').classList.add('hidden');
+  document.getElementById('fcCompleteBox').classList.remove('hidden');
+  const c = countStatuses(getCurrentLesson().vocab);
+  document.getElementById('fcCompleteSummary').innerHTML =
+    'Lượt này bạn đã học <b>' + fcTotal + ' thẻ</b> (' + fcSessionStats.unlearned + ' lần Không thuộc, ' + fcSessionStats.medium + ' lần Thuộc vừa).<br>' +
+    'Bài hiện có <b class="text-wine-700">' + c.m + ' Đã thuộc</b>, <b class="text-amber-600">' + c.med + ' Thuộc vừa</b>, <b class="text-slate-600">' + c.u + ' Chưa thuộc</b>.';
+  updateFcToolbar();
+}
+
+// ============================================================================
+// 9. ADAPTIVE QUIZ
+// ============================================================================
+function pickQuestionMode(sel) {
+  if (sel !== 'mixed') return sel;
+  const modes = ['zh-vi', 'vi-zh', 'pinyin-vizh'];
+  return modes[Math.floor(Math.random() * modes.length)];
+}
+
+function initQuizSession() {
+  const mode = document.getElementById('quizTypeSelect').value;
+  const scope = document.getElementById('quizScopeSelect').value;
+  const lesson = getCurrentLesson();
+  let pool = [];
+  if (scope === 'global_weak') {
+    const all = getAllCourseWords();
+    pool = all.filter(function(w) { return getWordStatus(w.id) !== 'mastered'; });
+    if (!pool.length) { showToast("Bạn đã thuộc hết toàn môn! Ôn ngẫu nhiên."); pool = all; }
+  } else if (scope === 'weak_only') {
+    pool = lesson.vocab.filter(function(w) { return getWordStatus(w.id) !== 'mastered'; });
+    if (!pool.length) { showToast("Bài này không còn từ yếu! Ôn tất cả từ."); pool = lesson.vocab.slice(); }
+  } else {
+    pool = lesson.vocab.slice();
+  }
+
+  const queue = [];
+  pool.forEach(function(w) {
+    const st = getWordStatus(w.id);
+    let repeats = 1;
+    if (scope !== 'all') repeats = st === 'unlearned' ? 3 : st === 'medium' ? 2 : 1;
+    for (let r = 0; r < repeats; r++) queue.push({ word: w, qType: pickQuestionMode(mode), isRetry: false });
+  });
+  shuffleArr(queue);
+  for (let i = 1; i < queue.length - 1; i++) {
+    if (queue[i].word.id === queue[i - 1].word.id) { const t = queue[i]; queue[i] = queue[queue.length - 1]; queue[queue.length - 1] = t; }
+  }
+  quizQueue = queue;
+  quizCompletedCount = 0;
+  quizMistakeCount = 0;
+  quizFirst = { correct: 0, total: 0, scope: document.getElementById('quizScopeSelect').value };
+  document.getElementById('quizActiveCard').classList.remove('hidden');
+  document.getElementById('quizCompleteCard').classList.add('hidden');
+  renderNextQuizItem();
+}
+
+function renderNextQuizItem() {
+  document.getElementById('quizNextWrap').classList.add('hidden');
+  if (!quizQueue.length) { showQuizCompleteScreen(); return; }
+  currentQuizItem = quizQueue.shift();
+  quizAnswered = false;
+  const w = currentQuizItem.word;
+  const qType = currentQuizItem.qType;
+
+  const remaining = quizQueue.length + 1;
+  document.getElementById('quizQueueCounter').textContent = 'Còn lại: ' + remaining + ' câu';
+  document.getElementById('quizProgressBar').style.width = Math.round(quizCompletedCount / Math.max(1, quizCompletedCount + remaining) * 100) + '%';
+  document.getElementById('quizRetryTag').classList.toggle('hidden', !currentQuizItem.isRetry);
+
+  const st = getWordStatus(w.id);
+  const tag = document.getElementById('quizWordMasteryTag');
+  tag.className = 'px-2.5 py-1 rounded-full ' + STATUS_STYLE[st].badge;
+  tag.textContent = STATUS_STYLE[st].label;
+
+  const allW = getAllCourseWords().filter(function(x) { return x.id !== w.id && x.hanzi !== w.hanzi && x.meaning !== w.meaning; });
+  const wLesson = COURSE_DATA.find(function(l) { return l.vocab.some(function(v) { return v.id === w.id; }); });
+  const sameUnit = shuffleArr(allW.filter(function(x) { return wLesson && x.unit === wLesson.unit; }));
+  const rest = shuffleArr(allW.filter(function(x) { return !wLesson || x.unit !== wLesson.unit; }));
+  const distractors = sameUnit.concat(rest).slice(0, 3);
+  const opts = shuffleArr([w].concat(distractors));
+
+  const badge = document.getElementById('quizModeBadge');
+  const main = document.getElementById('quizPromptMain');
+  const sub = document.getElementById('quizPromptSub');
+  if (qType === 'zh-vi') {
+    badge.textContent = 'Hán ➔ Nghĩa';
+    main.textContent = w.hanzi;
+    main.className = zhFontSize(w.hanzi, false) + ' font-bold text-slate-900 chinese-text pt-1 break-words';
+    sub.textContent = 'Chọn nghĩa tiếng Việt đúng' + (w.pos ? ' (' + w.pos + ')' : '');
+  } else if (qType === 'vi-zh') {
+    badge.textContent = 'Nghĩa ➔ Hán';
+    main.textContent = w.meaning;
+    main.className = 'text-2xl font-extrabold text-slate-900 pt-1 leading-snug break-words';
+    sub.textContent = 'Chọn chữ Hán tương ứng' + (w.pos ? ' (' + w.pos + ')' : '');
+  } else {
+    badge.textContent = 'Pinyin ➔ Hán & Nghĩa';
+    main.textContent = w.pinyin;
+    main.className = 'text-3xl font-extrabold text-wine-700 pt-1 break-words';
+    sub.textContent = 'Chọn cặp chữ Hán & nghĩa đúng';
+  }
+
+  document.getElementById('quizOptionsGrid').innerHTML = opts.map(function(o, idx) {
+    let lbl;
+    if (qType === 'zh-vi') lbl = '<span class="font-bold text-slate-800">' + esc(o.meaning) + '</span>';
+    else if (qType === 'vi-zh') lbl = '<span class="text-2xl font-bold text-slate-900 chinese-text">' + esc(o.hanzi) + '</span>';
+    else lbl = '<span class="text-xl font-bold text-slate-900 chinese-text">' + esc(o.hanzi) + '</span><span class="block text-sm font-semibold text-slate-600">' + esc(o.meaning) + '</span>';
+    return '<button data-action="quiz-answer" data-word-id="' + o.id + '" class="quiz-opt-btn w-full min-h-[56px] p-3.5 rounded-2xl border-2 border-slate-200 bg-white text-left active:bg-wine-50 transition flex items-center justify-between gap-3">' +
+      '<div class="flex items-center gap-3 pointer-events-none">' +
+        '<span class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 font-bold text-xs flex items-center justify-center shrink-0">' + String.fromCharCode(65 + idx) + '</span>' +
+        '<div>' + lbl + '</div>' +
+      '</div>' +
+      '<i class="quiz-opt-icon fa-regular fa-circle text-slate-300 pointer-events-none"></i>' +
+    '</button>';
+  }).join('');
+  document.getElementById('quizFeedbackBox').classList.add('hidden');
+}
+
+function submitQuizAnswer(selectedId, btnEl) {
+  if (quizAnswered) return;
+  quizAnswered = true;
+  const w = currentQuizItem.word;
+  const ok = selectedId === w.id;
+
+  document.querySelectorAll('.quiz-opt-btn').forEach(function(b) {
+    const icon = b.querySelector('.quiz-opt-icon');
+    if (b.getAttribute('data-word-id') === w.id) {
+      b.className = 'quiz-opt-btn w-full min-h-[56px] p-3.5 rounded-2xl border-2 border-wine-700 bg-wine-50 text-left flex items-center justify-between gap-3';
+      icon.className = 'quiz-opt-icon fa-solid fa-circle-check text-wine-700 text-lg pointer-events-none';
+    } else if (b === btnEl && !ok) {
+      b.className = 'quiz-opt-btn w-full min-h-[56px] p-3.5 rounded-2xl border-2 border-slate-400 bg-slate-100 text-left flex items-center justify-between gap-3';
+      icon.className = 'quiz-opt-icon fa-solid fa-circle-xmark text-slate-500 text-lg pointer-events-none';
+    } else {
+      b.classList.add('opacity-50');
+    }
+  });
+  speakChinese(w.hanzi);
+
+  const box = document.getElementById('quizFeedbackBox');
+  const head = document.getElementById('quizFeedbackHeader');
+  const detail = document.getElementById('quizFeedbackDetail');
+  box.classList.remove('hidden');
+  const info = '<b class="chinese-text text-base text-slate-900">' + esc(w.hanzi) + '</b> (' + esc(w.pinyin) + ') — <b>' + esc(w.meaning) + '</b>' +
+    (w.exZh ? '<div class="mt-1 text-slate-600 chinese-text">' + esc(w.exZh) + '</div><div class="text-slate-500">' + esc(w.exVi || '') + '</div>' : '');
+
+  if (!currentQuizItem.isRetry) { quizFirst.total++; if (ok) quizFirst.correct++; }
+  if (ok) {
+    quizCompletedCount++;
+    const still = quizQueue.some(function(i) { return i.word.id === w.id; });
+    const cur = getWordStatus(w.id);
+    if (!still) {
+      if (cur === 'unlearned') setWordStatus(w.id, 'medium', false);
+      else if (cur === 'medium' || currentQuizItem.isRetry) setWordStatus(w.id, 'mastered', false);
+    }
+    box.className = 'rounded-2xl p-3.5 border border-wine-200 bg-wine-50 text-sm space-y-1.5';
+    head.className = 'font-extrabold text-wine-800 flex items-center gap-2';
+    head.innerHTML = '<i class="fa-solid fa-circle-check"></i> Chính xác!';
+  } else {
+    quizMistakeCount++;
+    setWordStatus(w.id, 'unlearned', false);
+    quizQueue.splice(Math.min(quizQueue.length, 3), 0, { word: w, qType: pickQuestionMode(document.getElementById('quizTypeSelect').value), isRetry: true });
+    box.className = 'rounded-2xl p-3.5 border border-slate-300 bg-slate-50 text-sm space-y-1.5';
+    head.className = 'font-extrabold text-slate-800 flex items-center gap-2';
+    head.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-500"></i> Chưa đúng — từ này sẽ xuất hiện lại';
+  }
+  detail.innerHTML = info;
+  document.getElementById('quizNextWrap').classList.remove('hidden');
+}
+
+function showQuizCompleteScreen() {
+  document.getElementById('quizActiveCard').classList.add('hidden');
+  document.getElementById('quizNextWrap').classList.add('hidden');
+  document.getElementById('quizCompleteCard').classList.remove('hidden');
+  document.getElementById('quizCompleteStats').innerHTML =
+    'Bạn đã hoàn thành <b>' + quizCompletedCount + ' câu</b> (sai và làm lại: <b class="text-wine-700">' + quizMistakeCount + ' lần</b>).' +
+    (quizFirst.total ? '<br>Trả lời đúng ngay lần đầu: <b>' + quizFirst.correct + '/' + quizFirst.total + '</b>' : '');
+  if (quizFirst.total && quizFirst.scope !== 'global_weak') updateLessonRecord({ quiz: quizFirst.correct / quizFirst.total });
+  updateAllMasteryUI();
+}
+
+// ============================================================================
+// 10. READING
+// ============================================================================
+function renderBilingualBtn() {
+  const btn = document.getElementById('toggleBilingualBtn');
+  btn.className = 'py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition ' +
+    (showBilingual ? 'bg-wine-700 text-white' : 'bg-slate-100 text-slate-600');
+  btn.innerHTML = '<i class="fa-solid fa-language pointer-events-none"></i><span class="pointer-events-none">Bản dịch: ' + (showBilingual ? 'BẬT' : 'TẮT') + '</span>';
+}
+
+function renderGrammar() {
+  const lesson = getCurrentLesson();
+  const box = document.getElementById('grammarContainer');
+  if (!lesson.grammar.length) {
+    box.innerHTML = '<div class="bg-white rounded-2xl p-6 text-center border border-wine-100 shadow-sm space-y-3">' +
+      '<div class="w-14 h-14 rounded-2xl bg-wine-50 text-wine-700 text-2xl flex items-center justify-center mx-auto"><i class="fa-solid fa-book"></i></div>' +
+      '<p class="text-sm text-slate-600">Bài này không có điểm ngữ pháp riêng trong giáo trình.<br>Hãy tập trung vào từ vựng và nội dung bài khóa nhé!</p>' +
+      '<button data-action="switch-activity" data-activity="reading" class="px-4 py-2.5 rounded-xl bg-wine-700 text-white text-sm font-bold">Đọc bài khóa</button></div>';
+    return;
+  }
+  box.innerHTML = lesson.grammar.map(function(g, i) {
+    return '<div class="bg-white rounded-2xl border border-wine-100 shadow-sm overflow-hidden">' +
+      '<div class="px-4 py-3 bg-wine-50 border-b border-wine-100 flex items-start gap-3">' +
+        '<span class="w-7 h-7 rounded-lg bg-wine-700 text-white text-sm font-extrabold flex items-center justify-center shrink-0">' + (i + 1) + '</span>' +
+        '<div class="min-w-0"><div class="text-[11px] font-bold text-wine-600 uppercase tracking-wide">' + esc(g.name) + '</div>' +
+        '<div class="text-xl font-bold text-slate-900 chinese-text mt-0.5 break-words">' + esc(g.struct) + '</div></div>' +
+      '</div>' +
+      '<div class="p-4 space-y-3">' +
+        '<div class="text-sm text-slate-700"><b class="text-slate-500 text-xs uppercase">Giải thích</b><br>' + esc(g.explain) + '</div>' +
+        '<div class="rounded-xl bg-slate-50 border border-slate-100 p-3">' +
+          '<div class="flex items-start justify-between gap-2">' +
+            '<div class="min-w-0"><div class="text-[11px] font-bold text-slate-400 uppercase mb-1">Ví dụ</div>' +
+            '<div class="text-base font-medium text-slate-800 chinese-text leading-relaxed">' + esc(g.exZh) + '</div>' +
+            (g.exVi ? '<div class="text-xs text-slate-500 mt-1">' + esc(g.exVi) + '</div>' : '') + '</div>' +
+            '<button data-action="speak-word" data-hanzi="' + esc(g.exZh) + '" class="w-9 h-9 rounded-full bg-wine-50 text-wine-700 flex items-center justify-center shrink-0" aria-label="Nghe"><i class="fa-solid fa-volume-high pointer-events-none"></i></button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function getNextLesson() {
+  const i = COURSE_DATA.findIndex(function(l) { return l.id === currentLessonId; });
+  return COURSE_DATA[i + 1] || null;
+}
+
+function renderReadingView() {
+  const lesson = getCurrentLesson();
+  if (!lesson || !lesson.reading) return;
+  renderBilingualBtn();
+  document.getElementById('readingPassageTitle').textContent = lesson.reading.title + (lesson.note ? '  ' + lesson.note : '');
+  document.getElementById('readingPassageSub').textContent = lessonLabel(lesson) + ' · ' + lesson.titleVi;
+  const vocabByHanzi = {};
+  getAllCourseWords().forEach(function(w) { vocabByHanzi[w.hanzi] = w; });
+
+  document.getElementById('readingParagraphsContainer').innerHTML = lesson.reading.paragraphs.map(function(para) {
+    if (!para.tokens.length) return '<div class="h-2"></div>';
+    const tokens = para.tokens.map(function(tk) {
+      if (!tk.p && !tk.m) return '<span class="chinese-text text-xl text-slate-700">' + esc(tk.t) + '</span>';
+      const v = vocabByHanzi[tk.t];
+      return '<span class="word-token chinese-text text-xl text-slate-800 ' + (v ? 'vocab-highlight' : '') + '" data-action="token-click"' +
+        ' data-hanzi="' + esc(tk.t) + '" data-pinyin="' + esc(v ? v.pinyin : tk.p) + '" data-meaning="' + esc(v ? v.meaning : tk.m) + '" data-word-id="' + (v ? v.id : '') + '">' + esc(tk.t) + '</span>';
+    }).join('');
+    return '<div class="p-3.5 rounded-2xl bg-wine-50/40 border border-wine-50 space-y-3">' +
+      '<div style="line-height:2.3">' + tokens + '</div>' +
+      '<div class="bilingual-vi-line ' + (showBilingual ? '' : 'hidden') + ' pt-2.5 border-t border-wine-100 text-sm text-slate-700 leading-relaxed">' +
+        '<span class="inline-block px-1.5 py-0.5 rounded bg-wine-700 text-white text-[10px] font-bold uppercase mr-1.5 align-middle">Dịch</span>' + esc(para.vi) +
+      '</div>' +
+    '</div>';
+  }).join('');
+  renderReadingExercises();
+  const nx = getNextLesson();
+  const nxLock = nx ? lessonLockInfo(currentSubject, nx) : null;
+  document.getElementById('nextLessonBox').innerHTML = nx && nxLock.locked ?
+    '<div class="w-full p-4 rounded-2xl bg-slate-100 text-slate-600 border border-slate-200 flex items-center gap-3"><i class="fa-solid fa-lock text-xl"></i><div><div class="text-[11px] font-bold uppercase">Bài tiếp theo · ' + lessonLabel(nx) + '</div><div class="text-xs">' + esc(lockMessage(nxLock)) + '</div></div></div>' :
+    nx ?
+    '<button data-action="open-lesson" data-lesson-id="' + nx.id + '" class="w-full p-4 rounded-2xl bg-wine-700 text-white text-left flex items-center justify-between gap-3 active:scale-[.99] transition">' +
+      '<div class="pointer-events-none"><div class="text-[11px] font-bold uppercase text-wine-200">Học tiếp · ' + lessonLabel(nx) + '</div>' +
+      '<div class="font-bold chinese-text text-base">《' + esc(nx.titleZh) + '》</div><div class="text-xs text-wine-100">' + esc(nx.titleVi) + '</div></div>' +
+      '<i class="fa-solid fa-arrow-right pointer-events-none"></i></button>' :
+    '<div class="text-center text-sm text-slate-500 py-3">🎉 Bạn đã đến bài cuối cùng của môn ' + esc(currentSubject.name) + '!</div>';
+}
+
+function toggleBilingual() {
+  showBilingual = !showBilingual;
+  savePrefs();
+  document.querySelectorAll('.bilingual-vi-line').forEach(function(l) { l.classList.toggle('hidden', !showBilingual); });
+  renderBilingualBtn();
+}
+
+function speakFullPassage() {
+  const lesson = getCurrentLesson();
+  if (!lesson || !lesson.reading) return;
+  speakChinese(lesson.reading.paragraphs.map(function(p) { return p.tokens.map(function(t) { return t.t; }).join(''); }).join(''));
+}
+
+function openWordSheet(el) {
+  document.querySelectorAll('.word-token.active-token').forEach(function(n) { n.classList.remove('active-token'); });
+  el.classList.add('active-token');
+  sheetText = el.getAttribute('data-hanzi');
+  sheetWordId = el.getAttribute('data-word-id') || null;
+  document.getElementById('sheetHanzi').textContent = sheetText;
+  document.getElementById('sheetPinyin').textContent = el.getAttribute('data-pinyin');
+  document.getElementById('sheetMeaning').textContent = el.getAttribute('data-meaning');
+  document.getElementById('sheetStatusRow').classList.toggle('hidden', !sheetWordId);
+  renderSheetStatus();
+  document.getElementById('wordSheet').classList.add('open');
+  document.getElementById('sheetBackdrop').classList.add('open');
+  speakChinese(sheetText);
+}
+
+function renderSheetStatus() {
+  if (!sheetWordId) return;
+  const st = getWordStatus(sheetWordId);
+  const active = { unlearned: 'bg-slate-600 text-white', medium: 'bg-amber-400 text-amber-950', mastered: 'bg-wine-700 text-white' };
+  document.querySelectorAll('.sheet-st').forEach(function(b) {
+    const k = b.getAttribute('data-status');
+    b.className = 'sheet-st py-2.5 rounded-xl text-xs font-bold transition ' + (k === st ? active[k] : 'bg-slate-100 text-slate-500');
+  });
+}
+
+// ---- Hover tooltip for devices with a mouse ----
+const CAN_HOVER = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+let tipWordId = null, tipText = '', tipHideTimer = null;
+
+function showWordTooltip(el) {
+  clearTimeout(tipHideTimer);
+  document.querySelectorAll('.word-token.active-token').forEach(function(n) { n.classList.remove('active-token'); });
+  el.classList.add('active-token');
+  tipText = el.getAttribute('data-hanzi');
+  tipWordId = el.getAttribute('data-word-id') || null;
+  document.getElementById('tipHanzi').textContent = tipText;
+  document.getElementById('tipPinyin').textContent = el.getAttribute('data-pinyin');
+  document.getElementById('tipMeaning').textContent = el.getAttribute('data-meaning');
+  document.getElementById('tipStatusRow').classList.toggle('hidden', !tipWordId);
+  renderTipStatus();
+  const tip = document.getElementById('wordTooltip');
+  tip.classList.remove('hidden');
+  const r = el.getBoundingClientRect();
+  const tr = tip.getBoundingClientRect();
+  let top = r.top - tr.height - 8;
+  if (top < 70) top = r.bottom + 8;
+  let left = r.left + r.width / 2 - tr.width / 2;
+  left = Math.max(10, Math.min(window.innerWidth - tr.width - 10, left));
+  tip.style.top = top + 'px';
+  tip.style.left = left + 'px';
+}
+
+function hideWordTooltip() {
+  clearTimeout(tipHideTimer);
+  document.getElementById('wordTooltip').classList.add('hidden');
+  document.querySelectorAll('.word-token.active-token').forEach(function(n) { n.classList.remove('active-token'); });
+}
+
+function scheduleHideTooltip() {
+  clearTimeout(tipHideTimer);
+  tipHideTimer = setTimeout(hideWordTooltip, 250);
+}
+
+function renderTipStatus() {
+  if (!tipWordId) return;
+  const st = getWordStatus(tipWordId);
+  const active = { unlearned: 'bg-slate-600 text-white', medium: 'bg-amber-400 text-amber-950', mastered: 'bg-wine-700 text-white' };
+  document.querySelectorAll('.tip-st').forEach(function(b) {
+    const k = b.getAttribute('data-status');
+    b.className = 'tip-st py-1 rounded-md text-[10px] font-bold transition ' + (k === st ? active[k] : 'bg-slate-100 text-slate-500 hover:bg-wine-50');
+  });
+}
+
+if (CAN_HOVER) {
+  document.addEventListener('mouseover', function(e) {
+    const tk = e.target.closest('.word-token');
+    if (tk) { showWordTooltip(tk); return; }
+    if (e.target.closest('#wordTooltip')) clearTimeout(tipHideTimer);
+  });
+  document.addEventListener('mouseout', function(e) {
+    const from = e.target.closest('.word-token, #wordTooltip');
+    if (!from) return;
+    const to = e.relatedTarget;
+    if (to && (to.closest && (to.closest('#wordTooltip') || to.closest('.word-token')))) return;
+    scheduleHideTooltip();
+  });
+  window.addEventListener('scroll', function() { hideWordTooltip(); }, { passive: true });
+}
+
+function closeSheets() {
+  if (document.getElementById('wordTooltip')) hideWordTooltip();
+  document.getElementById('wordSheet').classList.remove('open');
+  document.getElementById('addWordModal').classList.remove('open');
+  ['accountSheet', 'studentSheet'].forEach(function(id) { const x = document.getElementById(id); if (x) x.classList.remove('open'); });
+  if (typeof openStudentSid !== 'undefined') openStudentSid = null;
+  document.getElementById('sheetBackdrop').classList.remove('open');
+  document.querySelectorAll('.word-token.active-token').forEach(function(n) { n.classList.remove('active-token'); });
+}
+
+function renderReadingExercises() {
+  readingFirst = {};
+  const lesson = getCurrentLesson();
+  if (!lesson || !lesson.reading) return;
+  document.getElementById('readingMcqContainer').innerHTML = lesson.reading.mcqs.map(function(item, qi) {
+    return '<div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">' +
+      '<div class="font-bold text-slate-800 text-[15px] chinese-text leading-relaxed">' + esc(item.q) + '</div>' +
+      '<div class="grid grid-cols-1 gap-2">' + item.options.map(function(opt, oi) {
+        return '<button data-action="reading-mcq" data-q="' + qi + '" data-o="' + oi + '" class="rmcq-' + qi + ' w-full p-3 rounded-xl bg-white border border-slate-200 text-left text-sm font-medium text-slate-700 chinese-text active:bg-wine-50 transition">' + esc(opt) + '</button>';
+      }).join('') + '</div>' +
+      '<div id="readingMcqExplain-' + qi + '" class="hidden text-xs p-3 rounded-xl"></div>' +
+    '</div>';
+  }).join('');
+
+  document.getElementById('readingFillContainer').innerHTML = lesson.reading.fills.map(function(item, fi) {
+    return '<div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">' +
+      '<div class="font-bold text-slate-800 text-[15px] chinese-text leading-relaxed">' + esc(item.sentence) + '</div>' +
+      '<div class="grid grid-cols-2 gap-2">' + item.options.map(function(opt) {
+        return '<button data-action="reading-fill" data-f="' + fi + '" data-opt="' + esc(opt) + '" class="rfill-' + fi + ' py-2.5 px-2 rounded-xl bg-white border border-slate-200 text-sm font-bold text-slate-700 chinese-text active:bg-wine-50 transition">' + esc(opt) + '</button>';
+      }).join('') + '</div>' +
+      '<div id="readingFillFeedback-' + fi + '" class="hidden text-xs font-semibold pt-1"></div>' +
+    '</div>';
+  }).join('');
+}
+
+function checkReadingMcq(qi, oi, btn) {
+  const item = getCurrentLesson().reading.mcqs[qi];
+  const ok = oi === item.correct;
+  document.querySelectorAll('.rmcq-' + qi).forEach(function(b, idx) {
+    if (idx === item.correct) b.className = 'rmcq-' + qi + ' w-full p-3 rounded-xl bg-wine-50 border-2 border-wine-700 text-left text-sm font-bold text-wine-900 chinese-text';
+    else if (b === btn && !ok) b.className = 'rmcq-' + qi + ' w-full p-3 rounded-xl bg-slate-100 border-2 border-slate-400 text-left text-sm font-bold text-slate-600 chinese-text line-through';
+  });
+  const ex = document.getElementById('readingMcqExplain-' + qi);
+  ex.classList.remove('hidden');
+  ex.className = 'text-xs p-3 rounded-xl ' + (ok ? 'bg-wine-50 text-wine-900 border border-wine-200' : 'bg-white text-slate-700 border border-slate-300');
+  ex.innerHTML = '<b>' + (ok ? '✓ Chính xác! ' : '✗ Chưa đúng. ') + '</b>' + esc(item.explain);
+  if (readingFirst['m' + qi] === undefined) { readingFirst['m' + qi] = ok; updateLessonRecord({ reading: readingProgressPart(getCurrentLesson()) }); }
+}
+
+function checkReadingFill(fi, chosen, btn) {
+  const item = getCurrentLesson().reading.fills[fi];
+  const ok = chosen === item.answer;
+  document.querySelectorAll('.rfill-' + fi).forEach(function(b) {
+    if (b.getAttribute('data-opt') === item.answer) b.className = 'rfill-' + fi + ' py-2.5 px-2 rounded-xl bg-wine-700 text-white text-sm font-bold chinese-text';
+    else if (b === btn && !ok) b.className = 'rfill-' + fi + ' py-2.5 px-2 rounded-xl bg-slate-300 text-slate-700 text-sm font-bold chinese-text line-through';
+  });
+  const parts = item.answer.split(' / ');
+  let k = 0;
+  const full = item.sentence.replace(/_{3,}/g, function() { const p = parts[k] || parts[0]; k++; return '【' + p + '】'; });
+  const fb = document.getElementById('readingFillFeedback-' + fi);
+  fb.classList.remove('hidden');
+  fb.className = 'text-xs font-semibold pt-1 ' + (ok ? 'text-wine-700' : 'text-slate-600');
+  fb.innerHTML = (ok ? '✓ Đúng rồi! ' : '✗ Chưa đúng. Đáp án: ') + '<span class="chinese-text text-sm">' + esc(full) + '</span>';
+  if (readingFirst['f' + fi] === undefined) { readingFirst['f' + fi] = ok; updateLessonRecord({ reading: readingProgressPart(getCurrentLesson()) }); }
+}
+
+// ============================================================================
+// 11. ADD WORD / RESET / TOAST
+// ============================================================================
+function openAddWordModal() {
+  document.getElementById('newWordLessonSelect').innerHTML = COURSE_DATA.map(function(l) {
+    return '<option value="' + l.id + '"' + (l.id === currentLessonId ? ' selected' : '') + '>' + lessonLabel(l) + ': ' + esc(l.titleZh) + '</option>';
+  }).join('');
+  document.getElementById('addWordModal').classList.add('open');
+  document.getElementById('sheetBackdrop').classList.add('open');
+}
+
+function saveNewWord() {
+  const lessonId = document.getElementById('newWordLessonSelect').value;
+  const hanzi = document.getElementById('newWordHanzi').value.trim();
+  const pinyin = document.getElementById('newWordPinyin').value.trim();
+  const pos = document.getElementById('newWordPos').value.trim() || "Từ mới";
+  const meaning = document.getElementById('newWordMeaning').value.trim();
+  const exZh = document.getElementById('newWordExZh').value.trim();
+  const exVi = document.getElementById('newWordExVi').value.trim();
+  if (!hanzi || !pinyin || !meaning) { showToast("Vui lòng nhập đủ Chữ Hán, Pinyin và Nghĩa!"); return; }
+  const nw = { id: currentSubject.id + ':custom_' + Date.now(), hanzi: hanzi, pinyin: pinyin, pos: pos, meaning: meaning, exZh: exZh, exVi: exVi };
+  const lesson = COURSE_DATA.find(function(l) { return l.id === lessonId; });
+  if (lesson) lesson.vocab.push(nw);
+  try {
+    const ex = JSON.parse(localStorage.getItem(STORAGE_KEY_CUSTOM_WORDS) || "[]");
+    ex.push({ subjectId: currentSubject.id, lessonId: lessonId, word: nw });
+    localStorage.setItem(STORAGE_KEY_CUSTOM_WORDS, JSON.stringify(ex));
+  } catch (e) {}
+  ['newWordHanzi', 'newWordPinyin', 'newWordPos', 'newWordMeaning', 'newWordExZh', 'newWordExVi'].forEach(function(id) { document.getElementById(id).value = ''; });
+  closeSheets();
+  updateAllMasteryUI();
+  if (currentActivity === 'vocab' && !document.getElementById('lessonView').classList.contains('hidden')) renderVocabList();
+  showToast('Đã thêm "' + hanzi + '" vào ' + lessonLabel(lesson));
+}
+
+function resetAllProgress() {
+  if (!confirm("Đặt lại toàn bộ tiến độ của môn " + currentSubject.name + "? Thao tác này không thể hoàn tác.")) return;
+  const prefix = currentSubject.id + ':';
+  Object.keys(masteryMap).forEach(function(k) { if (k.indexOf(prefix) === 0) delete masteryMap[k]; });
+  saveMasteryState();
+  showToast("Đã đặt lại tiến độ môn " + currentSubject.name + ".");
+}
+
+function showToast(msg) {
+  const box = document.getElementById('toastBox');
+  document.getElementById('toastMessage').textContent = msg;
+  box.classList.remove('hidden');
+  box.classList.add('flex');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(function() { box.classList.add('hidden'); box.classList.remove('flex'); }, 2400);
+}
+
+// ============================================================================
+// TÀI KHOẢN · ĐIỂM · KHÓA BÀI · TRẠNG THÁI ONLINE · QUẢN LÝ GIẢNG VIÊN
+// ============================================================================
+const ACC = Object.assign({
+  requireLogin: true,
+  unlockScore: 60,
+  scoring: { vocab: 40, quiz: 30, reading: 30 },
+  teacherEmails: [],
+  teacherDemoPassword: 'giangvien123',
+  firebase: null,
+  nanabase: null
+}, CFG.accounts || {});
+const NB_URL = ACC.nanabase && ACC.nanabase.url ? String(ACC.nanabase.url).trim().replace(/\/+$/, '') : '';
+const USE_NANABASE = !!NB_URL;
+const USE_FIREBASE = !USE_NANABASE && !!(ACC.firebase && ACC.firebase.apiKey && ACC.firebase.databaseURL);
+const USE_SERVER = USE_NANABASE || USE_FIREBASE;          // có máy chủ dùng chung cho cả lớp
+const MIN_PW = USE_NANABASE ? 6 : 4;                      // NanaBase yêu cầu mật khẩu từ 6 ký tự
+const ONLINE_STALE_MS = 3 * 60 * 1000;
+
+let ME = null;                       // { role:'student'|'teacher', sid, name, className, email }
+let MY = { lessons: {}, overrides: {} };
+let GLOBAL_LOCKS = {};
+let lessonRun = null;                // phiên học bài hiện tại
+let quizFirst = { correct: 0, total: 0, scope: '' };
+let readingFirst = {};               // { 'm0': true/false, 'f1': ... }
+let TD = { students: {}, status: {}, progress: {}, overrides: {} };  // dữ liệu bảng giảng viên
+let teacherTab = 'students';
+let pendingLoginMatches = null;
+let masterySyncTimer = null;
+let heartbeatTimer = null;
+
+// ---------- SHA-256 (thuần JS, chạy cả khi mở file trực tiếp) ----------
+function sha256(msg) {
+  function rr(n, x) { return (x >>> n) | (x << (32 - n)); }
+  const K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+  const bytes = unescape(encodeURIComponent(msg));
+  const l = bytes.length;
+  const words = [];
+  for (let i = 0; i < l; i++) words[i >> 2] |= bytes.charCodeAt(i) << (24 - (i % 4) * 8);
+  words[l >> 2] |= 0x80 << (24 - (l % 4) * 8);
+  words[(((l + 8) >> 6) + 1) * 16 - 1] = l * 8;
+  let H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+  const W = new Array(64);
+  for (let j = 0; j < words.length; j += 16) {
+    let a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];
+    for (let i = 0; i < 64; i++) {
+      if (i < 16) W[i] = words[j + i] | 0;
+      else {
+        const s0 = rr(7, W[i-15]) ^ rr(18, W[i-15]) ^ (W[i-15] >>> 3);
+        const s1 = rr(17, W[i-2]) ^ rr(19, W[i-2]) ^ (W[i-2] >>> 10);
+        W[i] = (W[i-16] + s0 + W[i-7] + s1) | 0;
+      }
+      const S1 = rr(6, e) ^ rr(11, e) ^ rr(25, e);
+      const ch = (e & f) ^ (~e & g);
+      const t1 = (h + S1 + ch + K[i] + W[i]) | 0;
+      const S0 = rr(2, a) ^ rr(13, a) ^ rr(22, a);
+      const mj = (a & b) ^ (a & c) ^ (b & c);
+      const t2 = (S0 + mj) | 0;
+      h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+    }
+    H = [(H[0]+a)|0,(H[1]+b)|0,(H[2]+c)|0,(H[3]+d)|0,(H[4]+e)|0,(H[5]+f)|0,(H[6]+g)|0,(H[7]+h)|0];
+  }
+  return H.map(function(x) { return ('00000000' + (x >>> 0).toString(16)).slice(-8); }).join('');
+}
+function hashPw(pw, salt) { let h = salt + '|' + pw; for (let i = 0; i < 300; i++) h = sha256(h + salt); return h; }
+function randId(n) { const c = 'abcdefghijkmnpqrstuvwxyz23456789'; let s = ''; for (let i = 0; i < (n || 10); i++) s += c[Math.floor(Math.random() * c.length)]; return s; }
+function nameKey(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'd').toLowerCase().replace(/\s+/g, ' ').trim(); }
+function cleanName(s) { return String(s || '').replace(/\s+/g, ' ').trim(); }
+function fmtTime(ts) { if (!ts) return '—'; const d = new Date(ts); return d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }); }
+function fmtAgo(ts) {
+  if (!ts) return 'chưa có';
+  const s = Math.max(0, Math.round((Date.now() - ts) / 1000));
+  if (s < 60) return 'vừa xong';
+  if (s < 3600) return Math.floor(s / 60) + ' phút trước';
+  if (s < 86400) return Math.floor(s / 3600) + ' giờ trước';
+  return Math.floor(s / 86400) + ' ngày trước';
+}
+
+// ============================================================================
+// BACKEND 1: CHẾ ĐỘ THỬ (lưu trên máy này — dùng khi chưa cấu hình Firebase)
+// ============================================================================
+const LocalBackend = (function() {
+  const KEY = 'zhlib_localdb_v1';
+  const listeners = [];
+  function read() { try { return Object.assign({ students: {}, progress: {}, mastery: {}, status: {}, overrides: {}, locks: {} }, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { return { students: {}, progress: {}, mastery: {}, status: {}, overrides: {}, locks: {} }; } }
+  function write(db) { localStorage.setItem(KEY, JSON.stringify(db)); listeners.forEach(function(f) { f(db); }); }
+  function mut(fn) { const db = read(); fn(db); write(db); return Promise.resolve(); }
+  window.addEventListener('storage', function(e) { if (e.key === KEY) { const db = read(); listeners.forEach(function(f) { f(db); }); } });
+  return {
+    name: 'local',
+    init: function() { return Promise.resolve(); },
+    findByName: function(key) { const db = read(); return Promise.resolve(Object.keys(db.students).filter(function(id) { return db.students[id].nameKey === key; }).map(function(id) { return Object.assign({ sid: id }, db.students[id]); })); },
+    createStudent: function(rec) { const id = 'sv' + randId(10); return mut(function(db) { db.students[id] = rec; }).then(function() { return id; }); },
+    patchStudent: function(sid, patch) { return mut(function(db) { if (db.students[sid]) Object.assign(db.students[sid], patch); }); },
+    incStudent: function(sid, field) { return mut(function(db) { if (db.students[sid]) db.students[sid][field] = (db.students[sid][field] || 0) + 1; }); },
+    teacherLogin: function(email, pw) { return pw === ACC.teacherDemoPassword ? Promise.resolve({ email: email || 'giangvien' }) : Promise.reject(new Error('Sai mật khẩu giảng viên.')); },
+    teacherLogout: function() { return Promise.resolve(); },
+    loadMine: function(sid) { const db = read(); return Promise.resolve({ progress: db.progress[sid] || {}, mastery: db.mastery[sid] || {}, overrides: db.overrides[sid] || {} }); },
+    saveMastery: function(sid, map) { return mut(function(db) { db.mastery[sid] = map; }); },
+    saveLesson: function(sid, key, rec) { return mut(function(db) { db.progress[sid] = db.progress[sid] || {}; db.progress[sid].lessons = db.progress[sid].lessons || {}; db.progress[sid].lessons[key] = rec; }); },
+    pushSession: function(sid, entry) { const k = 's' + Date.now() + randId(4); return mut(function(db) { db.progress[sid] = db.progress[sid] || {}; db.progress[sid].sessions = db.progress[sid].sessions || {}; db.progress[sid].sessions[k] = entry; }).then(function() { return k; }); },
+    patchSession: function(sid, k, patch) { return mut(function(db) { const s = db.progress[sid] && db.progress[sid].sessions && db.progress[sid].sessions[k]; if (s) Object.assign(s, patch); }); },
+    setStatus: function(sid, st) { return mut(function(db) { db.status[sid] = Object.assign(db.status[sid] || {}, st); }); },
+    setupPresence: function() {},
+    onMyControls: function(sid, cb) { const f = function(db) { cb(db.overrides[sid] || {}, db.locks || {}); }; f._ctrl = true; listeners.push(f); f(read()); },
+    offMyControls: function() { for (let i = listeners.length - 1; i >= 0; i--) if (listeners[i]._ctrl) listeners.splice(i, 1); },
+    onTeacherData: function(cb) { const f = function(db) { cb({ students: db.students, status: db.status, progress: db.progress, overrides: db.overrides, locks: db.locks }); }; listeners.push(f); f(read()); },
+    setOverride: function(sid, key, val) { return mut(function(db) { db.overrides[sid] = db.overrides[sid] || {}; if (val) db.overrides[sid][key] = val; else delete db.overrides[sid][key]; }); },
+    setGlobalLock: function(key, on) { return mut(function(db) { if (on) db.locks[key] = true; else delete db.locks[key]; }); },
+    deleteStudent: function(sid) { return mut(function(db) { ['students', 'progress', 'mastery', 'status', 'overrides'].forEach(function(t) { delete db[t][sid]; }); }); },
+    now: function() { return Date.now(); }
+  };
+})();
+
+// ============================================================================
+// BACKEND 2: FIREBASE REALTIME DATABASE (dữ liệu chung cho cả lớp)
+// ============================================================================
+const FirebaseBackend = (function() {
+  let db = null, auth = null, TS = null;
+  function loadJs(src) { return new Promise(function(res, rej) { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = function() { rej(new Error('Không tải được thư viện Firebase (kiểm tra mạng).')); }; document.head.appendChild(s); }); }
+  function r(p) { return db.ref(p); }
+  function anon() { return auth.currentUser ? Promise.resolve() : auth.signInAnonymously(); }
+  return {
+    name: 'firebase',
+    init: function() {
+      const v = '10.12.2', base = 'https://www.gstatic.com/firebasejs/' + v + '/';
+      return loadJs(base + 'firebase-app-compat.js')
+        .then(function() { return loadJs(base + 'firebase-auth-compat.js'); })
+        .then(function() { return loadJs(base + 'firebase-database-compat.js'); })
+        .then(function() {
+          firebase.initializeApp(ACC.firebase);
+          auth = firebase.auth(); db = firebase.database(); TS = firebase.database.ServerValue.TIMESTAMP;
+          return new Promise(function(res) { const un = auth.onAuthStateChanged(function() { un(); res(); }); });
+        }).then(function() {
+          const u = auth.currentUser;
+          let saved = null;
+          try { saved = JSON.parse(sessionStorage.getItem('zhlib_me') || 'null'); } catch (e) {}
+          if (u && !u.isAnonymous) {
+            if (saved && saved.role === 'teacher') return; // giảng viên đang trong phiên làm việc
+            return auth.signOut().then(anon);              // không để sinh viên dùng nhầm quyền giảng viên
+          }
+          return anon();
+        });
+    },
+    currentTeacher: function() { const u = auth && auth.currentUser; return u && !u.isAnonymous ? { email: u.email } : null; },
+    findByName: function(key) { return anon().then(function() { return r('students').orderByChild('nameKey').equalTo(key).once('value'); }).then(function(snap) { const out = []; snap.forEach(function(c) { out.push(Object.assign({ sid: c.key }, c.val())); }); return out; }); },
+    createStudent: function(rec) { const ref = r('students').push(); return ref.set(rec).then(function() { return ref.key; }); },
+    patchStudent: function(sid, patch) { return r('students/' + sid).update(patch); },
+    incStudent: function(sid, field) { return r('students/' + sid + '/' + field).transaction(function(v) { return (v || 0) + 1; }); },
+    teacherLogin: function(email, pw) {
+      return auth.signInWithEmailAndPassword(email, pw).then(function(cred) {
+        const em = (cred.user.email || '').toLowerCase();
+        const allowed = (ACC.teacherEmails || []).map(function(x) { return String(x).toLowerCase(); });
+        if (allowed.length && allowed.indexOf(em) < 0) { return auth.signOut().then(anon).then(function() { throw new Error('Email này không có quyền giảng viên.'); }); }
+        return { email: em };
+      }).catch(function(err) {
+        if (err && /auth\/(wrong-password|user-not-found|invalid-credential|invalid-login-credentials|invalid-email)/.test(err.code || '')) throw new Error('Sai email hoặc mật khẩu giảng viên.');
+        throw err;
+      });
+    },
+    teacherLogout: function() { return auth.signOut().then(anon); },
+    loadMine: function(sid) {
+      return Promise.all([r('progress/' + sid).once('value'), r('mastery/' + sid).once('value'), r('overrides/' + sid).once('value')])
+        .then(function(a) { return { progress: a[0].val() || {}, mastery: a[1].val() || {}, overrides: a[2].val() || {} }; });
+    },
+    saveMastery: function(sid, map) { return r('mastery/' + sid).set(map); },
+    saveLesson: function(sid, key, rec) { return r('progress/' + sid + '/lessons/' + key).set(rec); },
+    pushSession: function(sid, entry) { const ref = r('progress/' + sid + '/sessions').push(); return ref.set(entry).then(function() { return ref.key; }); },
+    patchSession: function(sid, k, patch) { return r('progress/' + sid + '/sessions/' + k).update(patch); },
+    setStatus: function(sid, st) { return r('status/' + sid).update(Object.assign({}, st, { at: TS })); },
+    setupPresence: function(sid) {
+      r('.info/connected').on('value', function(snap) {
+        if (snap.val() !== true || !ME || ME.sid !== sid) return;
+        r('status/' + sid).onDisconnect().update({ state: 'offline', reason: 'exit', at: TS }).then(function() {
+          r('status/' + sid).update({ state: document.visibilityState === 'hidden' ? 'offline' : 'online', reason: document.visibilityState === 'hidden' ? 'tab' : '', at: TS });
+        });
+      });
+    },
+    onMyControls: function(sid, cb) {
+      let ov = {}, lk = {};
+      this._ctrl = [r('overrides/' + sid), r('locks')];
+      this._ctrl[0].on('value', function(s) { ov = s.val() || {}; cb(ov, lk); });
+      this._ctrl[1].on('value', function(s) { lk = s.val() || {}; cb(ov, lk); });
+    },
+    offMyControls: function() { (this._ctrl || []).forEach(function(x) { x.off(); }); this._ctrl = []; },
+    onTeacherData: function(cb) {
+      const data = { students: {}, status: {}, progress: {}, overrides: {}, locks: {} };
+      ['students', 'status', 'progress', 'overrides', 'locks'].forEach(function(k) {
+        r(k).on('value', function(s) { data[k] = s.val() || {}; cb(data); }, function(err) { showToast('Lỗi đọc dữ liệu: ' + err.message); });
+      });
+    },
+    setOverride: function(sid, key, val) { return r('overrides/' + sid + '/' + key).set(val || null); },
+    setGlobalLock: function(key, on) { return r('locks/' + key).set(on ? true : null); },
+    deleteStudent: function(sid) { const u = {}; ['students', 'progress', 'mastery', 'status', 'overrides'].forEach(function(t) { u[t + '/' + sid] = null; }); return db.ref().update(u); },
+    now: function() { return Date.now(); }
+  };
+})();
+
+
+// ============================================================================
+// BACKEND 3: NANABASE (máy chủ tự host của giảng viên — xem HUONG-DAN-NANABASE.txt)
+// ============================================================================
+const NanaBaseBackend = (function() {
+  const P = (ACC.nanabase && ACC.nanabase.prefix != null) ? String(ACC.nanabase.prefix) : 'tv_';
+  const C = { students: P + 'students', progress: P + 'progress', mastery: P + 'mastery', status: P + 'status', overrides: P + 'overrides', locks: P + 'locks' };
+  let nb = null;
+  const subs = [];
+  // Khóa bài học có thể chứa dấu "." — mã hóa để không bị hiểu là đường dẫn lồng nhau
+  function encK(k) { return String(k).replace(/%/g, '%25').replace(/\./g, '%2E'); }
+  function decK(k) { return String(k).replace(/%2E/g, '.').replace(/%25/g, '%'); }
+  function decObj(o) { const out = {}; Object.keys(o || {}).forEach(function(k) { out[decK(k)] = o[k]; }); return out; }
+  function decProgress(d) { d = Object.assign({}, d || {}); if (d.lessons) d.lessons = decObj(d.lessons); return d; }
+  function doc(col, id) { return nb.collection(col).doc(id); }
+  function merge(col, id, data, keepalive) {
+    return nb.request('PUT', '/api/db/' + encodeURIComponent(col) + '/' + encodeURIComponent(id) + '?merge=1', data, { keepalive: !!keepalive });
+  }
+  function getData(col, id) { return doc(col, id).get().then(function(d) { return d ? d.data : null; }); }
+  function quiet(p) { return p.catch(function(e) { console.warn('[NanaBase]', e.message); }); }
+  function loadSdk() {
+    if (window.NanaBase) return Promise.resolve();
+    return new Promise(function(res, rej) {
+      const s = document.createElement('script');
+      s.src = NB_URL + '/sdk.js';
+      s.onload = res;
+      s.onerror = function() { rej(new Error('Không kết nối được máy chủ NanaBase (' + NB_URL + '). Kiểm tra máy chủ đã bật và địa chỉ trong config.js.')); };
+      document.head.appendChild(s);
+    });
+  }
+  function isTeacherUser(u) { return !!u && (u.role === 'teacher' || u.role === 'admin'); }
+  return {
+    name: 'nanabase',
+    init: function() {
+      return loadSdk().then(function() {
+        nb = NanaBase.init(NB_URL);
+        return nb.auth.refresh();
+      }).then(function(u) {
+        // không để sinh viên dùng nhầm phiên của giảng viên và ngược lại
+        let saved = null;
+        try { saved = JSON.parse(sessionStorage.getItem('zhlib_me') || 'null'); } catch (e) {}
+        if (u && saved && ((saved.role === 'teacher') !== isTeacherUser(u) || (saved.role === 'student' && saved.sid !== u.uid))) nb.auth.logout();
+      });
+    },
+    currentTeacher: function() { const u = nb && nb.auth.user; return isTeacherUser(u) ? { email: u.email || u.name } : null; },
+    // Đăng ký / đăng nhập sinh viên bằng Họ tên + Lớp + Mật mã (máy chủ kiểm tra, mật mã không rời khỏi máy chủ)
+    registerStudent: function(name, cls, pw) {
+      return nb.auth.registerByName(name, pw, cls).then(function(u) {
+        return doc(C.students, u.uid).set({ name: name, nameKey: nameKey(name), className: cls, createdAt: Date.now(), loginCount: 0, visitCount: 0, lastLogin: 0, lastSeen: 0, totalPoints: 0, completedCount: 0 })
+          .then(function() { return u.uid; });
+      });
+    },
+    loginStudent: function(name, pw, pickSid) {
+      return nb.auth.loginByName(name, pw, pickSid).then(function(r) {
+        if (r.choices) return { choices: r.choices.map(function(c) { return { sid: c.uid, name: c.name, className: c.group }; }) };
+        if (isTeacherUser(r)) { nb.auth.logout(); throw new Error('Đây là tài khoản giảng viên, hãy dùng tab “Giảng viên”.'); }
+        return getData(C.students, r.uid).then(function(st) {
+          if (!st) { // tài khoản do giảng viên tạo sẵn trong NanaBase: tạo hồ sơ học tập lần đầu
+            st = { name: r.name, nameKey: nameKey(r.name), className: r.group || '', createdAt: Date.now(), loginCount: 0, visitCount: 0, lastLogin: 0, lastSeen: 0, totalPoints: 0, completedCount: 0 };
+            return doc(C.students, r.uid).set(st).then(function() { return st; });
+          }
+          return st;
+        }).then(function(st) { return { sid: r.uid, name: st.name || r.name, className: st.className || r.group || '' }; });
+      }).catch(function(err) {
+        if (err.code === 'wrong-credentials') throw new Error('Họ tên hoặc mật mã không đúng. Nếu chưa có tài khoản, hãy chọn “Đăng ký”.');
+        throw err;
+      });
+    },
+    resumeStudent: function(sid) {
+      const u = nb.auth.user;
+      if (!u || u.uid !== sid) return Promise.resolve(null);
+      return getData(C.students, sid).then(function(st) { return st ? { sid: sid, name: st.name, className: st.className } : null; })
+        .catch(function() { return null; });
+    },
+    studentLogout: function() { nb.auth.logout(); },
+    resetStudentPassword: function(sid, pw) { return nb.users.setPassword(sid, pw); },
+    findByName: function() { return Promise.reject(new Error('Không dùng với NanaBase')); },
+    createStudent: function() { return Promise.reject(new Error('Không dùng với NanaBase')); },
+    patchStudent: function(sid, patch) { return quiet(merge(C.students, sid, patch)); },
+    incStudent: function(sid, field) { const d = {}; d[field] = nb.field.increment(1); return quiet(merge(C.students, sid, d)); },
+    teacherLogin: function(email, pw) {
+      return nb.auth.login(email, pw).then(function(u) {
+        if (!isTeacherUser(u)) { nb.auth.logout(); throw new Error('Tài khoản này không có quyền giảng viên. Quản trị viên NanaBase cần đặt vai trò “Giáo viên”.'); }
+        return { email: u.email || u.name };
+      }).catch(function(err) {
+        if (err.code === 'wrong-credentials') throw new Error('Sai email hoặc mật khẩu giảng viên.');
+        throw err;
+      });
+    },
+    teacherLogout: function() { nb.auth.logout(); return Promise.resolve(); },
+    loadMine: function(sid) {
+      return Promise.all([getData(C.progress, sid), getData(C.mastery, sid), getData(C.overrides, sid)]).then(function(a) {
+        return { progress: decProgress(a[0]), mastery: (a[1] && a[1].map) || {}, overrides: decObj(a[2]) };
+      });
+    },
+    saveMastery: function(sid, map) {
+      const body = { map: map };
+      const big = JSON.stringify(body).length > 60000;
+      return quiet(nb.request('PUT', '/api/db/' + C.mastery + '/' + encodeURIComponent(sid), body, { keepalive: !big }));
+    },
+    saveLesson: function(sid, key, rec) { const d = {}; d['lessons.' + encK(key)] = rec; return quiet(merge(C.progress, sid, d)); },
+    pushSession: function(sid, entry) {
+      const k = 's' + Date.now() + randId(4);
+      const d = {}; d['sessions.' + k] = entry;
+      return merge(C.progress, sid, d).then(function() { return k; }, function(e) { console.warn('[NanaBase]', e.message); return k; });
+    },
+    patchSession: function(sid, k, patch) {
+      const d = {};
+      Object.keys(patch).forEach(function(f) { d['sessions.' + k + '.' + f] = patch[f]; });
+      return quiet(merge(C.progress, sid, d, true));
+    },
+    setStatus: function(sid, st) {
+      const d = Object.assign({}, st, { at: nb.field.serverTime() });
+      return quiet(merge(C.status, sid, d, true));
+    },
+    setupPresence: function() {},   // trạng thái được gửi định kỳ; quá 3 phút không gửi = offline
+    onMyControls: function(sid, cb) {
+      let ov = {}, lk = {};
+      this.offMyControls();
+      subs.push(doc(C.overrides, sid).onSnapshot(function(d) { ov = decObj(d && d.data); cb(ov, lk); }, function() {}));
+      subs.push(doc(C.locks, 'all').onSnapshot(function(d) { lk = decObj(d && d.data); cb(ov, lk); }, function() {}));
+    },
+    offMyControls: function() { while (subs.length) { try { subs.pop()(); } catch (e) {} } },
+    onTeacherData: function(cb) {
+      const data = { students: {}, status: {}, progress: {}, overrides: {}, locks: {} };
+      const conv = { progress: decProgress, overrides: decObj };
+      let timer = null;
+      const emit = function() { clearTimeout(timer); timer = setTimeout(function() { cb(data); }, 250); };
+      ['students', 'status', 'progress', 'overrides'].forEach(function(k) {
+        const f = conv[k] || function(x) { return x || {}; };
+        nb.collection(C[k]).getAll(20000).then(function(items) {
+          items.forEach(function(d) { data[k][d.id] = f(d.data); });
+          emit();
+        }).catch(function(err) { showToast('Lỗi đọc dữ liệu: ' + err.message); });
+        // cập nhật trực tiếp từng thay đổi, không tải lại toàn bộ
+        nb.collection(C[k]).onChange(function(ev) {
+          if (!ev.doc) return;
+          if (ev.type === 'delete') delete data[k][ev.doc.id];
+          else data[k][ev.doc.id] = f(ev.doc.data);
+          emit();
+        });
+      });
+      doc(C.locks, 'all').onSnapshot(function(d) { data.locks = decObj(d && d.data); emit(); });
+    },
+    setOverride: function(sid, key, val) {
+      const d = {}; d[encK(key)] = val ? val : nb.field.delete();
+      return merge(C.overrides, sid, d).catch(function(e) { showToast('Lỗi: ' + e.message); throw e; });
+    },
+    setGlobalLock: function(key, on) {
+      const d = {}; d[encK(key)] = on ? true : nb.field.delete();
+      return merge(C.locks, 'all', d).catch(function(e) { showToast('Lỗi: ' + e.message); throw e; });
+    },
+    deleteStudent: function(sid) {
+      // xóa tài khoản trên máy chủ cùng mọi dữ liệu có mã = mã sinh viên (hồ sơ, điểm, từ vựng, trạng thái, quyền riêng)
+      return nb.users.remove(sid, { purge: true }).catch(function(e) { showToast('Lỗi: ' + e.message); throw e; });
+    },
+    now: function() { return Date.now(); }
+  };
+})();
+
+const BE = USE_NANABASE ? NanaBaseBackend : USE_FIREBASE ? FirebaseBackend : LocalBackend;
+
+// ============================================================================
+// ĐĂNG KÝ / ĐĂNG NHẬP
+// ============================================================================
+function saveSession() { try { sessionStorage.setItem('zhlib_me', JSON.stringify(ME)); } catch (e) {} }
+function clearSession() { try { sessionStorage.removeItem('zhlib_me'); } catch (e) {} }
+
+function authError(msg) { const el = document.getElementById('authError'); el.textContent = msg || ''; el.classList.toggle('hidden', !msg); }
+function setAuthBusy(on) { document.querySelectorAll('.auth-submit').forEach(function(b) { b.disabled = on; b.classList.toggle('opacity-60', on); }); }
+
+function switchAuthTab(tab) {
+  ['login', 'register', 'teacher'].forEach(function(t) {
+    document.getElementById('authForm-' + t).classList.toggle('hidden', t !== tab);
+    const b = document.getElementById('authTab-' + t);
+    b.className = 'auth-tab py-2 rounded-lg text-xs font-bold transition ' + (t === tab ? 'bg-white text-wine-700 shadow-sm' : 'text-slate-500');
+  });
+  document.getElementById('loginClassPick').classList.add('hidden');
+  pendingLoginMatches = null;
+  authError('');
+}
+
+function doRegister() {
+  const name = cleanName(document.getElementById('regName').value);
+  const cls = cleanName(document.getElementById('regClass').value).toUpperCase();
+  const pw = document.getElementById('regPw').value;
+  const pw2 = document.getElementById('regPw2').value;
+  if (name.length < 2) return authError('Vui lòng nhập họ và tên sinh viên.');
+  if (!cls) return authError('Vui lòng nhập lớp sinh hoạt.');
+  if (pw.length < MIN_PW) return authError('Mật mã cần ít nhất ' + MIN_PW + ' ký tự.');
+  if (pw !== pw2) return authError('Hai lần nhập mật mã không khớp.');
+  setAuthBusy(true); authError('');
+  if (BE.registerStudent) {
+    return BE.registerStudent(name, cls, pw).then(function(sid) {
+      return startStudentSession({ sid: sid, name: name, className: cls }, true);
+    }).catch(function(err) { authError(err.message || String(err)); }).then(function() { setAuthBusy(false); });
+  }
+  const key = nameKey(name);
+  BE.findByName(key).then(function(list) {
+    if (list.some(function(s) { return nameKey(s.className) === nameKey(cls); })) throw new Error('Tên này đã được đăng ký trong lớp ' + cls + '. Hãy đăng nhập, hoặc nhờ giảng viên cấp lại tài khoản.');
+    if (list.some(function(s) { return s.passHash === hashPw(pw, s.salt); })) throw new Error('Đã có bạn trùng tên dùng mật mã này. Vui lòng chọn mật mã khác.');
+    const salt = randId(12);
+    const now = Date.now();
+    return BE.createStudent({ name: name, nameKey: key, className: cls, salt: salt, passHash: hashPw(pw, salt), createdAt: now, loginCount: 0, visitCount: 0, lastLogin: 0, totalPoints: 0, completedCount: 0 });
+  }).then(function(sid) {
+    return startStudentSession({ sid: sid, name: name, className: cls }, true);
+  }).catch(function(err) { authError(err.message || String(err)); }).then(function() { setAuthBusy(false); });
+}
+
+function doLogin(pickSid) {
+  const name = cleanName(document.getElementById('loginName').value);
+  const pw = document.getElementById('loginPw').value;
+  if (!pickSid) {
+    if (name.length < 2 || !pw) return authError('Vui lòng nhập họ tên và mật mã.');
+  }
+  setAuthBusy(true); authError('');
+  if (BE.loginStudent) {
+    return BE.loginStudent(name, pw, pickSid).then(function(r) {
+      if (r.choices) { showClassPick(r.choices); return; }
+      return startStudentSession(r, true);
+    }).catch(function(err) { authError(err.message || String(err)); }).then(function() { setAuthBusy(false); });
+  }
+  const p = pickSid ? Promise.resolve(pendingLoginMatches.filter(function(s) { return s.sid === pickSid; })) :
+    BE.findByName(nameKey(name)).then(function(list) { return list.filter(function(s) { return s.passHash === hashPw(pw, s.salt); }); });
+  p.then(function(matches) {
+    if (!matches.length) throw new Error('Họ tên hoặc mật mã không đúng. Nếu chưa có tài khoản, hãy chọn “Đăng ký”.');
+    if (matches.length > 1) { showClassPick(matches); return; }
+    const s = matches[0];
+    return startStudentSession({ sid: s.sid, name: s.name, className: s.className }, true);
+  }).catch(function(err) { authError(err.message || String(err)); }).then(function() { setAuthBusy(false); });
+}
+
+function showClassPick(matches) {
+  pendingLoginMatches = matches;
+  document.getElementById('loginClassPick').classList.remove('hidden');
+  document.getElementById('loginClassList').innerHTML = matches.map(function(s) {
+    return '<button data-action="login-pick" data-sid="' + esc(s.sid) + '" class="w-full py-2.5 rounded-xl bg-wine-50 border border-wine-200 text-wine-800 text-sm font-bold">Lớp ' + esc(s.className || '(chưa ghi lớp)') + '</button>';
+  }).join('');
+}
+
+function doTeacherLogin() {
+  const email = (document.getElementById('tEmail').value || '').trim();
+  const pw = document.getElementById('tPw').value;
+  if (USE_SERVER && !email) return authError('Vui lòng nhập email giảng viên.');
+  if (!pw) return authError('Vui lòng nhập mật khẩu.');
+  setAuthBusy(true); authError('');
+  BE.teacherLogin(email, pw).then(function(t) {
+    ME = { role: 'teacher', email: t.email, name: 'Giảng viên' };
+    saveSession();
+    afterLogin();
+    location.hash = '#/gv';
+    route();
+  }).catch(function(err) { authError(err.message || String(err)); }).then(function() { setAuthBusy(false); });
+}
+
+function startStudentSession(me, isFreshLogin) {
+  ME = { role: 'student', sid: me.sid, name: me.name, className: me.className };
+  return BE.loadMine(me.sid).then(function(mine) {
+    MY.lessons = (mine.progress && mine.progress.lessons) || {};
+    MY.overrides = mine.overrides || {};
+    // tiến độ từ vựng: ưu tiên dữ liệu trên máy chủ, gộp với bản lưu tạm trên máy
+    let local = {};
+    try { local = JSON.parse(localStorage.getItem('zhlib_mastery_' + me.sid) || '{}'); } catch (e) {}
+    masteryMap = Object.assign({}, local, mine.mastery || {});
+    const now = Date.now();
+    const jobs = [BE.incStudent(me.sid, 'visitCount')];
+    if (isFreshLogin) { jobs.push(BE.incStudent(me.sid, 'loginCount')); jobs.push(BE.patchStudent(me.sid, { lastLogin: now })); }
+    jobs.push(BE.patchStudent(me.sid, { lastSeen: now }));
+    return Promise.all(jobs);
+  }).then(function() {
+    saveSession();
+    BE.setupPresence(me.sid);
+    BE.onMyControls(me.sid, function(ov, lk) {
+      MY.overrides = ov || {}; GLOBAL_LOCKS = lk || {};
+      if (currentView === 'subject') renderLessonsGrid();
+      if (currentView === 'lesson' && currentSubject) {
+        const l = getCurrentLesson();
+        if (l && lessonLockInfo(currentSubject, l).locked) { showToast('Giảng viên vừa khóa bài này.'); goSubject(currentSubject.id); }
+      }
+    });
+    afterLogin();
+    pushStatus();
+    route();
+  });
+}
+
+function afterLogin() {
+  document.getElementById('authView').classList.add('hidden');
+  renderUserChip();
+  clearInterval(heartbeatTimer);
+  heartbeatTimer = setInterval(function() {
+    if (ME && ME.role === 'student' && document.visibilityState === 'visible') pushStatus();
+    if (ME && ME.role === 'teacher' && currentView === 'teacher') renderTeacher();
+  }, 45000);
+}
+
+function doLogout() {
+  closeSheets();
+  endLessonRun();
+  if (BE.offMyControls) BE.offMyControls();
+  const finish = function() {
+    if (ME && ME.role === 'student' && BE.studentLogout) BE.studentLogout();
+    ME = null; MY = { lessons: {}, overrides: {} }; masteryMap = {};
+    clearSession(); clearInterval(heartbeatTimer);
+    location.hash = '#/';
+    showAuth();
+  };
+  if (ME && ME.role === 'student') {
+    flushMastery();
+    BE.setStatus(ME.sid, { state: 'offline', reason: 'logout', at: Date.now() }).then(finish, finish);
+  } else if (ME && ME.role === 'teacher') BE.teacherLogout().then(finish, finish);
+  else finish();
+}
+
+function showAuth() {
+  document.getElementById('authView').classList.remove('hidden');
+  document.getElementById('authModeNote').innerHTML = USE_SERVER ? '' :
+    '<i class="fa-solid fa-flask"></i> Chế độ thử: tài khoản chỉ lưu trên trình duyệt này. Hãy cấu hình máy chủ NanaBase (hoặc Firebase) trong config.js để cả lớp dùng chung.';
+  document.getElementById('tEmailWrap').classList.toggle('hidden', !USE_SERVER);
+  document.getElementById('tDemoHint').classList.toggle('hidden', USE_SERVER);
+  const pwHint = document.getElementById('regPw');
+  if (pwHint) pwHint.setAttribute('placeholder', pwHint.getAttribute('placeholder').replace(/\d+ ký tự/, MIN_PW + ' ký tự'));
+  renderUserChip();
+}
+
+function renderUserChip() {
+  const chip = document.getElementById('userChip');
+  if (!ME) { chip.classList.add('hidden'); return; }
+  chip.classList.remove('hidden');
+  chip.innerHTML = ME.role === 'teacher' ? '<i class="fa-solid fa-chalkboard-user pointer-events-none"></i>' :
+    '<span class="pointer-events-none">' + esc(ME.name.split(' ').slice(-1)[0].slice(0, 1).toUpperCase()) + '</span>';
+  chip.title = ME.role === 'teacher' ? 'Giảng viên' : ME.name + ' · ' + ME.className;
+}
+
+function openAccountSheet() {
+  if (!ME) return;
+  const box = document.getElementById('accountSheetBody');
+  if (ME.role === 'teacher') {
+    box.innerHTML = '<div class="text-center space-y-1"><div class="w-14 h-14 rounded-2xl bg-wine-700 text-white text-2xl flex items-center justify-center mx-auto"><i class="fa-solid fa-chalkboard-user"></i></div>' +
+      '<div class="font-extrabold text-lg">Giảng viên</div><div class="text-xs text-slate-500">' + esc(ME.email || '') + '</div></div>' +
+      '<div class="grid grid-cols-2 gap-2 pt-3"><button data-action="go-teacher" class="py-3 rounded-xl bg-wine-700 text-white text-sm font-bold">Bảng quản lý</button>' +
+      '<button data-action="go-library" class="py-3 rounded-xl bg-wine-50 text-wine-800 text-sm font-bold border border-wine-200">Xem thư viện</button></div>' +
+      '<button data-action="logout" class="w-full mt-2 py-3 rounded-xl bg-slate-100 text-slate-700 text-sm font-bold">Đăng xuất</button>';
+  } else {
+    const pts = myTotalPoints();
+    box.innerHTML = '<div class="text-center space-y-1"><div class="w-14 h-14 rounded-2xl bg-wine-700 text-white text-2xl font-black flex items-center justify-center mx-auto">' + esc(ME.name.split(' ').slice(-1)[0].slice(0, 1).toUpperCase()) + '</div>' +
+      '<div class="font-extrabold text-lg">' + esc(ME.name) + '</div><div class="text-xs text-slate-500">Lớp ' + esc(ME.className) + '</div></div>' +
+      '<div class="grid grid-cols-2 gap-2 pt-3 text-center">' +
+        '<div class="rounded-2xl bg-wine-50 border border-wine-100 p-3"><div class="text-2xl font-black text-wine-700">' + pts.points + '</div><div class="text-[11px] text-slate-500">Tổng điểm</div></div>' +
+        '<div class="rounded-2xl bg-wine-50 border border-wine-100 p-3"><div class="text-2xl font-black text-wine-700">' + pts.completed + '</div><div class="text-[11px] text-slate-500">Bài đã hoàn thành</div></div>' +
+      '</div>' +
+      '<p class="text-[11px] text-slate-500 text-center pt-2">Mỗi bài tối đa 100 điểm. Đạt từ ' + ACC.unlockScore + ' điểm sẽ mở khóa bài tiếp theo.</p>' +
+      '<button data-action="logout" class="w-full mt-2 py-3 rounded-xl bg-slate-100 text-slate-700 text-sm font-bold">Đăng xuất</button>';
+  }
+  document.getElementById('accountSheet').classList.add('open');
+  document.getElementById('sheetBackdrop').classList.add('open');
+}
+
+// ============================================================================
+// TRẠNG THÁI ONLINE / OFFLINE
+// ============================================================================
+function placeText() {
+  if (currentView === 'lesson' && currentSubject) {
+    const l = getCurrentLesson();
+    const actName = { vocab: 'Từ vựng', grammar: 'Ngữ pháp', flashcard: 'Thẻ bài', quiz: 'Luyện tập', reading: 'Bài khóa' }[currentActivity] || '';
+    return currentSubject.name + ' › ' + lessonLabelFor(currentSubject, l) + ' 《' + l.titleZh + '》' + (actName ? ' › ' + actName : '');
+  }
+  if (currentView === 'subject' && currentSubject) return currentSubject.name + ' (trang môn học)';
+  return 'Trang thư viện';
+}
+function pushStatus(extra) {
+  if (!ME || ME.role !== 'student') return;
+  const hidden = document.visibilityState === 'hidden';
+  const l = currentView === 'lesson' && currentSubject ? getCurrentLesson() : null;
+  BE.setStatus(ME.sid, Object.assign({
+    state: hidden ? 'offline' : 'online', reason: hidden ? 'tab' : '', at: Date.now(),
+    place: placeText(), subj: currentSubject ? currentSubject.id : '', lid: l ? l.id : ''
+  }, extra || {}));
+  BE.patchStudent(ME.sid, { lastSeen: Date.now() });
+}
+document.addEventListener('visibilitychange', function() {
+  if (!ME || ME.role !== 'student') return;
+  if (document.visibilityState === 'hidden') { flushMastery(); touchLessonRun(); }
+  pushStatus();
+});
+window.addEventListener('pagehide', function() {
+  if (!ME || ME.role !== 'student') return;
+  flushMastery(); touchLessonRun();
+  BE.setStatus(ME.sid, { state: 'offline', reason: 'exit', at: Date.now() });
+});
+
+// ============================================================================
+// LƯU TIẾN ĐỘ TỪ VỰNG LÊN MÁY CHỦ
+// ============================================================================
+function masteryStorageKey() {
+  if (ME && ME.role === 'student') return 'zhlib_mastery_' + ME.sid;
+  if (ME && ME.role === 'teacher') return 'zhlib_mastery_teacher';
+  return STORAGE_KEY_MASTERY;
+}
+function scheduleMasterySync() {
+  if (!ME || ME.role !== 'student') return;
+  clearTimeout(masterySyncTimer);
+  masterySyncTimer = setTimeout(flushMastery, 1500);
+}
+function flushMastery() {
+  if (!ME || ME.role !== 'student') return;
+  clearTimeout(masterySyncTimer);
+  BE.saveMastery(ME.sid, masteryMap);
+}
+
+// ============================================================================
+// ĐIỂM BÀI HỌC & KHÓA BÀI
+// ============================================================================
+function lessonKeyOf(s, l) { return s.id + '|' + l.id; }
+function lessonParts(l) {
+  const w = ACC.scoring || {};
+  const parts = [];
+  if (l.vocab.length) parts.push(['vocab', w.vocab || 0]);
+  if (l.vocab.length >= 2) parts.push(['quiz', w.quiz || 0]);
+  if (l.reading.mcqs.length + l.reading.fills.length) parts.push(['reading', w.reading || 0]);
+  const sum = parts.reduce(function(a, p) { return a + p[1]; }, 0) || 1;
+  return parts.map(function(p) { return [p[0], p[1] * 100 / sum]; });
+}
+function vocabPart(l) { if (!l.vocab.length) return 0; const c = countStatuses(l.vocab); return (c.m + c.med * 0.5) / l.vocab.length; }
+function getRec(s, l) { return MY.lessons[lessonKeyOf(s, l)] || { vocab: 0, quiz: 0, reading: 0, score: 0, best: 0, completed: false, attempts: 0 }; }
+function scoreOf(rec, l) { return Math.round(lessonParts(l).reduce(function(a, p) { return a + (rec[p[0]] || 0) * p[1]; }, 0)); }
+
+function updateLessonRecord(patch) {
+  if (!ME || ME.role !== 'student' || !currentSubject) return;
+  const l = getCurrentLesson(); if (!l) return;
+  const key = lessonKeyOf(currentSubject, l);
+  const old = getRec(currentSubject, l);
+  const rec = Object.assign({}, old);
+  rec.vocab = vocabPart(l);
+  if (patch && patch.quiz != null) rec.quiz = Math.max(old.quiz || 0, patch.quiz);
+  if (patch && patch.reading != null) rec.reading = Math.max(old.reading || 0, patch.reading);
+  rec.score = scoreOf(rec, l);
+  rec.best = Math.max(old.best || 0, rec.score);
+  const was = !!old.completed;
+  rec.completed = was || rec.best >= ACC.unlockScore;
+  rec.title = l.titleZh; rec.subjectName = currentSubject.name; rec.label = lessonLabelFor(currentSubject, l);
+  rec.updatedAt = Date.now();
+  if (lessonRun && lessonRun.key === key) rec.attempts = old.attempts || 0;
+  const changed = ['vocab', 'quiz', 'reading', 'score', 'best', 'completed'].some(function(k) { return old[k] !== rec[k]; });
+  MY.lessons[key] = rec;
+  if (changed) {
+    BE.saveLesson(ME.sid, key, rec);
+    syncTotals();
+  }
+  renderLessonScoreBadge();
+  if (!was && rec.completed) {
+    const nx = getNextLesson();
+    showToast('🎉 Đạt ' + rec.best + ' điểm! ' + (nx ? 'Đã mở khóa bài tiếp theo.' : 'Bạn đã hoàn thành bài cuối.'));
+    if (currentActivity === 'reading') renderReadingView();
+  }
+  if (lessonRun && lessonRun.key === key) { lessonRun.score = rec.score; touchLessonRun(); }
+}
+function myTotalPoints() {
+  let points = 0, completed = 0;
+  Object.keys(MY.lessons).forEach(function(k) { points += MY.lessons[k].best || 0; if (MY.lessons[k].completed) completed++; });
+  return { points: points, completed: completed };
+}
+function syncTotals() {
+  if (!ME || ME.role !== 'student') return;
+  const t = myTotalPoints();
+  BE.patchStudent(ME.sid, { totalPoints: t.points, completedCount: t.completed });
+}
+
+// Quy tắc khóa: GV mở/khóa riêng > GV khóa cả lớp > học tuần tự (bài trước đạt điểm)
+function lessonLockInfo(s, l, ctx) {
+  if (!ACC.requireLogin) return { locked: false };
+  if (!ctx && (!ME || ME.role === 'teacher')) return { locked: false };
+  const lessons = (ctx && ctx.lessons) || MY.lessons;
+  const ov = (ctx && ctx.overrides) || MY.overrides || {};
+  const locks = (ctx && ctx.locks) || GLOBAL_LOCKS || {};
+  const key = lessonKeyOf(s, l);
+  if (ov[key] === 'unlocked') return { locked: false, reason: 'gv-open' };
+  if (ov[key] === 'locked') return { locked: true, reason: 'gv' };
+  if (locks[key]) return { locked: true, reason: 'gv-all' };
+  const idx = s.lessons.indexOf(l);
+  if (idx <= 0) return { locked: false };
+  const prev = s.lessons[idx - 1];
+  const pr = lessons[lessonKeyOf(s, prev)];
+  if (pr && pr.completed) return { locked: false };
+  return { locked: true, reason: 'seq', prev: prev };
+}
+function lockMessage(info) {
+  if (info.reason === 'gv' || info.reason === 'gv-all') return 'Bài này đang bị giảng viên khóa.';
+  if (info.reason === 'seq') return 'Hãy hoàn thành ' + lessonLabelFor(currentSubject, info.prev) + ' (đạt từ ' + ACC.unlockScore + ' điểm) để mở khóa bài này.';
+  return 'Bài học đang bị khóa.';
+}
+
+// Phiên học: mỗi lần mở một bài được lưu lại
+function startLessonRun() {
+  endLessonRun();
+  if (!ME || ME.role !== 'student') return;
+  const l = getCurrentLesson();
+  const key = lessonKeyOf(currentSubject, l);
+  const now = Date.now();
+  lessonRun = { key: key, start: now, sk: null, score: getRec(currentSubject, l).score || 0 };
+  const entry = { key: key, subjectName: currentSubject.name, label: lessonLabelFor(currentSubject, l), title: l.titleZh, start: now, end: now, score: lessonRun.score };
+  const run = lessonRun;
+  BE.pushSession(ME.sid, entry).then(function(k) { run.sk = k; });
+  const rec = getRec(currentSubject, l);
+  rec.attempts = (rec.attempts || 0) + 1;
+  rec.lastStudied = now;
+  rec.title = l.titleZh; rec.subjectName = currentSubject.name; rec.label = lessonLabelFor(currentSubject, l);
+  MY.lessons[key] = rec;
+  quizFirst = { correct: 0, total: 0, scope: '' };
+  readingFirst = {};
+  updateLessonRecord({});
+  BE.saveLesson(ME.sid, key, MY.lessons[key]);
+}
+function touchLessonRun() {
+  if (!lessonRun || !lessonRun.sk || !ME || ME.role !== 'student') return;
+  BE.patchSession(ME.sid, lessonRun.sk, { end: Date.now(), score: lessonRun.score });
+}
+function endLessonRun() { if (lessonRun) { touchLessonRun(); lessonRun = null; } }
+
+function renderLessonScoreBadge() {
+  const el = document.getElementById('lessonScoreBadge');
+  if (!el) return;
+  if (!ME || ME.role !== 'student' || currentView !== 'lesson') { el.classList.add('hidden'); return; }
+  const rec = getRec(currentSubject, getCurrentLesson());
+  el.classList.remove('hidden');
+  el.innerHTML = '<i class="fa-solid fa-star"></i> ' + (rec.score || 0) + ' điểm' + (rec.best > rec.score ? ' · cao nhất ' + rec.best : '') + (rec.completed ? ' · <i class="fa-solid fa-circle-check"></i> Đã hoàn thành' : ' · cần ' + ACC.unlockScore + ' để mở bài sau');
+}
+
+function readingProgressPart(l) {
+  const total = l.reading.mcqs.length + l.reading.fills.length;
+  if (!total) return 0;
+  const ok = Object.keys(readingFirst).filter(function(k) { return readingFirst[k]; }).length;
+  return ok / total;
+}
+
+// ============================================================================
+// BẢNG QUẢN LÝ GIẢNG VIÊN
+// ============================================================================
+let teacherSubscribed = false;
+function showTeacher() {
+  if (!ME || ME.role !== 'teacher') { goLibrary(); return; }
+  setViews('teacher');
+  currentSubject = null;
+  document.getElementById('headerTitle').textContent = 'Quản lý sinh viên';
+  document.getElementById('headerSubtitle').textContent = CFG.siteName + (USE_SERVER ? '' : ' · chế độ thử');
+  if (!teacherSubscribed) {
+    teacherSubscribed = true;
+    BE.onTeacherData(function(d) {
+      TD = d; GLOBAL_LOCKS = d.locks || {};
+      if (currentView === 'teacher') renderTeacher();
+      if (document.getElementById('studentSheet').classList.contains('open') && openStudentSid) renderStudentDetail(openStudentSid);
+    });
+  }
+  renderTeacher();
+}
+
+function studentOnline(sid) {
+  const st = TD.status[sid];
+  if (!st) return { on: false, text: 'Chưa từng vào', at: 0 };
+  const at = st.at || 0;
+  if (st.state === 'online' && Date.now() - at < ONLINE_STALE_MS) return { on: true, text: 'Đang online', at: at, place: st.place };
+  const why = { tab: 'đã chuyển tab / ẩn trình duyệt', exit: 'đã thoát web', logout: 'đã đăng xuất' }[st.reason] || 'mất kết nối';
+  return { on: false, text: 'Offline · ' + why, at: at, place: st.place };
+}
+
+function studentLastLesson(sid) {
+  const p = TD.progress[sid];
+  if (!p || !p.sessions) return null;
+  let last = null;
+  Object.keys(p.sessions).forEach(function(k) { const s = p.sessions[k]; if (!last || s.start > last.start) last = s; });
+  return last;
+}
+
+function renderTeacher() {
+  if (currentView !== 'teacher') return;
+  const ids = Object.keys(TD.students || {});
+  const classes = [];
+  ids.forEach(function(id) { const c = TD.students[id].className; if (c && classes.indexOf(c) < 0) classes.push(c); });
+  classes.sort();
+  const sel = document.getElementById('tClassFilter');
+  const curCls = sel.value;
+  sel.innerHTML = '<option value="">Tất cả lớp (' + classes.length + ')</option>' + classes.map(function(c) { return '<option value="' + esc(c) + '"' + (c === curCls ? ' selected' : '') + '>Lớp ' + esc(c) + '</option>'; }).join('');
+  const online = ids.filter(function(id) { return studentOnline(id).on; }).length;
+  const avg = ids.length ? Math.round(ids.reduce(function(a, id) { return a + (TD.students[id].totalPoints || 0); }, 0) / ids.length) : 0;
+  document.getElementById('tCountAll').textContent = ids.length;
+  document.getElementById('tCountOnline').textContent = online;
+  document.getElementById('tCountClasses').textContent = classes.length;
+  document.getElementById('tAvgPoints').textContent = avg;
+  ['students', 'locks'].forEach(function(t) {
+    document.getElementById('tPanel-' + t).classList.toggle('hidden', teacherTab !== t);
+    document.getElementById('tTab-' + t).className = 'py-2 rounded-lg text-xs font-bold transition ' + (teacherTab === t ? 'bg-white text-wine-700 shadow-sm' : 'text-slate-500');
+  });
+  if (teacherTab === 'locks') { renderGlobalLocks(); return; }
+
+  const q = nameKey(document.getElementById('tSearch').value);
+  const cls = sel.value;
+  const sort = document.getElementById('tSort').value;
+  let list = ids.map(function(id) { return Object.assign({ sid: id }, TD.students[id]); }).filter(function(s) {
+    if (cls && s.className !== cls) return false;
+    if (q && (s.nameKey || '').indexOf(q) < 0 && nameKey(s.className).indexOf(q) < 0) return false;
+    return true;
+  });
+  list.sort(function(a, b) {
+    if (sort === 'points') return (b.totalPoints || 0) - (a.totalPoints || 0);
+    if (sort === 'logins') return (b.loginCount || 0) - (a.loginCount || 0);
+    if (sort === 'name') return (a.name.split(' ').slice(-1)[0] + a.name).localeCompare(b.name.split(' ').slice(-1)[0] + b.name, 'vi');
+    if (sort === 'class') return (a.className + a.name).localeCompare(b.className + b.name, 'vi');
+    const oa = studentOnline(a.sid), ob = studentOnline(b.sid);
+    if (oa.on !== ob.on) return oa.on ? -1 : 1;
+    return (ob.at || 0) - (oa.at || 0);
+  });
+  const box = document.getElementById('tStudentList');
+  if (!list.length) { box.innerHTML = '<div class="bg-white rounded-2xl p-8 text-center text-sm text-slate-400 border border-wine-100">' + (ids.length ? 'Không có sinh viên phù hợp bộ lọc.' : 'Chưa có sinh viên nào đăng ký.') + '</div>'; return; }
+  box.innerHTML = list.map(function(s) {
+    const on = studentOnline(s.sid);
+    const last = studentLastLesson(s.sid);
+    const where = on.on ? (on.place || '') : (last ? 'Học gần nhất: ' + last.subjectName + ' › ' + last.label + ' 《' + last.title + '》' : 'Chưa học bài nào');
+    return '<button data-action="t-open-student" data-sid="' + esc(s.sid) + '" class="w-full text-left bg-white rounded-2xl p-3.5 border ' + (on.on ? 'border-wine-400 ring-1 ring-wine-200' : 'border-wine-100') + ' shadow-sm active:bg-wine-50/40 transition">' +
+      '<div class="flex items-start gap-3 pointer-events-none">' +
+        '<div class="relative shrink-0"><div class="w-11 h-11 rounded-xl ' + (on.on ? 'bg-wine-700 text-white' : 'bg-slate-100 text-slate-500') + ' font-black flex items-center justify-center">' + esc(s.name.split(' ').slice(-1)[0].slice(0, 1).toUpperCase()) + '</div>' +
+          '<span class="absolute -right-1 -bottom-1 w-4 h-4 rounded-full border-2 border-white ' + (on.on ? 'bg-wine-600 status-pulse' : 'bg-slate-300') + '"></span></div>' +
+        '<div class="flex-1 min-w-0">' +
+          '<div class="flex items-center justify-between gap-2"><div class="font-extrabold text-slate-900 truncate">' + esc(s.name) + '</div>' +
+          '<span class="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-extrabold ' + (on.on ? 'bg-wine-700 text-white' : 'bg-slate-200 text-slate-600') + '">' + (on.on ? 'ONLINE' : 'OFFLINE') + '</span></div>' +
+          '<div class="text-[11px] text-slate-500">Lớp ' + esc(s.className) + ' · ' + (on.on ? 'đang học' : esc(on.text.replace('Offline · ', '')) + ' · ' + fmtAgo(on.at)) + '</div>' +
+          '<div class="text-xs text-slate-700 mt-1 truncate chinese-text">' + esc(where) + '</div>' +
+          '<div class="flex flex-wrap gap-1.5 mt-2 text-[11px]">' +
+            '<span class="px-2 py-0.5 rounded-md bg-wine-50 text-wine-800 font-bold"><i class="fa-solid fa-star"></i> ' + (s.totalPoints || 0) + ' điểm</span>' +
+            '<span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold">' + (s.completedCount || 0) + ' bài xong</span>' +
+            '<span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold">' + (s.loginCount || 0) + ' lần đăng nhập</span>' +
+            '<span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold">' + (s.visitCount || 0) + ' lượt vào web</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</button>';
+  }).join('');
+}
+
+function renderGlobalLocks() {
+  const box = document.getElementById('tLockList');
+  box.innerHTML = SUBJECTS.map(function(s) {
+    return '<div class="bg-white rounded-2xl border border-wine-100 shadow-sm overflow-hidden">' +
+      '<div class="px-4 py-3 bg-wine-50 border-b border-wine-100 font-extrabold text-wine-800">' + esc(s.name) + ' <span class="text-xs font-semibold text-slate-500">· ' + s.lessons.length + ' bài</span></div>' +
+      '<div class="divide-y divide-slate-100">' + s.lessons.map(function(l) {
+        const key = lessonKeyOf(s, l);
+        const on = !!(TD.locks || {})[key];
+        return '<div class="flex items-center justify-between gap-3 px-4 py-2.5">' +
+          '<div class="min-w-0"><div class="text-[11px] text-slate-500">' + esc(lessonLabelFor(s, l)) + '</div><div class="text-sm font-bold chinese-text truncate">《' + esc(l.titleZh) + '》</div></div>' +
+          '<button data-action="t-global-lock" data-key="' + esc(key) + '" data-on="' + (on ? '0' : '1') + '" class="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold ' + (on ? 'bg-wine-700 text-white' : 'bg-slate-100 text-slate-600') + '">' +
+            (on ? '<i class="fa-solid fa-lock pointer-events-none"></i> Đang khóa' : '<i class="fa-solid fa-lock-open pointer-events-none"></i> Đang mở') + '</button>' +
+        '</div>';
+      }).join('') + '</div></div>';
+  }).join('') || '<div class="text-sm text-slate-400 text-center p-6">Chưa có môn học.</div>';
+}
+
+let openStudentSid = null;
+function openStudentSheet(sid) {
+  openStudentSid = sid;
+  renderStudentDetail(sid);
+  document.getElementById('studentSheet').classList.add('open');
+  document.getElementById('sheetBackdrop').classList.add('open');
+}
+function renderStudentDetail(sid) {
+  const s = TD.students[sid];
+  const box = document.getElementById('studentSheetBody');
+  if (!s) { box.innerHTML = '<div class="p-6 text-center text-slate-500">Tài khoản không còn tồn tại.</div>'; return; }
+  const on = studentOnline(sid);
+  const prog = TD.progress[sid] || {};
+  const lessons = prog.lessons || {};
+  const ov = (TD.overrides || {})[sid] || {};
+  const sessions = Object.keys(prog.sessions || {}).map(function(k) { return prog.sessions[k]; }).sort(function(a, b) { return b.start - a.start; });
+  const ctx = { lessons: lessons, overrides: ov, locks: TD.locks || {} };
+  let html = '<div class="flex items-start gap-3">' +
+    '<div class="w-14 h-14 rounded-2xl ' + (on.on ? 'bg-wine-700 text-white' : 'bg-slate-100 text-slate-500') + ' text-2xl font-black flex items-center justify-center shrink-0">' + esc(s.name.split(' ').slice(-1)[0].slice(0, 1).toUpperCase()) + '</div>' +
+    '<div class="min-w-0 flex-1"><div class="font-extrabold text-lg leading-tight">' + esc(s.name) + '</div><div class="text-xs text-slate-500">Lớp ' + esc(s.className) + ' · đăng ký ' + fmtTime(s.createdAt) + '</div>' +
+    '<div class="mt-1 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold ' + (on.on ? 'bg-wine-700 text-white' : 'bg-slate-200 text-slate-600') + '"><span class="w-2 h-2 rounded-full ' + (on.on ? 'bg-white status-pulse' : 'bg-slate-400') + '"></span>' + esc(on.text) + (on.on ? '' : ' · ' + fmtAgo(on.at)) + '</div></div></div>' +
+    (on.place ? '<div class="mt-2 text-xs text-slate-600 chinese-text"><b>' + (on.on ? 'Đang ở:' : 'Vị trí cuối:') + '</b> ' + esc(on.place) + '</div>' : '') +
+    '<div class="grid grid-cols-4 gap-2 mt-3 text-center">' +
+      [['Điểm', s.totalPoints || 0], ['Bài xong', s.completedCount || 0], ['Đăng nhập', s.loginCount || 0], ['Lượt vào', s.visitCount || 0]].map(function(x) {
+        return '<div class="rounded-xl bg-wine-50 border border-wine-100 py-2"><div class="text-lg font-black text-wine-700">' + x[1] + '</div><div class="text-[10px] text-slate-500">' + x[0] + '</div></div>';
+      }).join('') + '</div>' +
+    '<div class="text-[11px] text-slate-500 mt-2">Đăng nhập gần nhất: ' + fmtTime(s.lastLogin) + '</div>';
+
+  html += '<div class="mt-4 font-extrabold text-sm text-slate-700">Điểm & khóa bài học</div>' +
+    '<p class="text-[11px] text-slate-500 mb-2">“Theo lộ trình”: phải đạt ' + ACC.unlockScore + ' điểm bài trước mới mở. “Mở” / “Khóa”: giảng viên quyết định riêng cho bạn này.</p>';
+  SUBJECTS.forEach(function(subj) {
+    html += '<div class="rounded-2xl border border-wine-100 overflow-hidden mb-2"><div class="px-3 py-2 bg-wine-50 text-xs font-extrabold text-wine-800">' + esc(subj.name) + '</div><div class="divide-y divide-slate-100">';
+    subj.lessons.forEach(function(l) {
+      const key = lessonKeyOf(subj, l);
+      const rec = lessons[key];
+      const info = lessonLockInfo(subj, l, ctx);
+      const mode = ov[key] || '';
+      html += '<div class="px-3 py-2">' +
+        '<div class="flex items-center justify-between gap-2"><div class="min-w-0"><div class="text-[11px] text-slate-500">' + esc(lessonLabelFor(subj, l)) + (info.locked ? ' · <i class="fa-solid fa-lock"></i> khóa' : ' · <i class="fa-solid fa-lock-open"></i> mở') + '</div>' +
+        '<div class="text-sm font-bold chinese-text truncate">《' + esc(l.titleZh) + '》</div></div>' +
+        '<div class="text-right shrink-0">' + (rec ? '<div class="text-sm font-black ' + (rec.completed ? 'text-wine-700' : 'text-slate-700') + '">' + (rec.best || 0) + 'đ' + (rec.completed ? ' ✓' : '') + '</div><div class="text-[10px] text-slate-400">' + (rec.attempts || 0) + ' lần học</div>' : '<div class="text-[11px] text-slate-400">chưa học</div>') + '</div></div>' +
+        '<div class="grid grid-cols-3 gap-1 mt-1.5">' +
+          [['', 'Theo lộ trình'], ['unlocked', 'Mở'], ['locked', 'Khóa']].map(function(o) {
+            return '<button data-action="t-override" data-sid="' + esc(sid) + '" data-key="' + esc(key) + '" data-val="' + o[0] + '" class="py-1 rounded-md text-[11px] font-bold ' + (mode === o[0] ? 'bg-wine-700 text-white' : 'bg-slate-100 text-slate-500') + '">' + o[1] + '</button>';
+          }).join('') + '</div>' +
+      '</div>';
+    });
+    html += '</div></div>';
+  });
+
+  html += '<div class="mt-4 font-extrabold text-sm text-slate-700">Lịch sử học (' + sessions.length + ' lần)</div><div class="space-y-1.5 mt-2">' +
+    (sessions.slice(0, 30).map(function(x) {
+      const mins = Math.max(0, Math.round(((x.end || x.start) - x.start) / 60000));
+      return '<div class="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-xs"><div class="font-bold chinese-text">' + esc(x.subjectName + ' › ' + x.label + ' 《' + x.title + '》') + '</div>' +
+        '<div class="text-slate-500">' + fmtTime(x.start) + ' · ' + (mins ? mins + ' phút' : 'dưới 1 phút') + ' · ' + (x.score || 0) + ' điểm</div></div>';
+    }).join('') || '<div class="text-xs text-slate-400">Chưa có lần học nào.</div>') + '</div>';
+
+  html += '<div class="mt-4 grid grid-cols-2 gap-2">' +
+    '<button data-action="t-reset-pw" data-sid="' + esc(sid) + '" class="py-3 rounded-xl bg-wine-50 border border-wine-200 text-wine-800 text-sm font-bold"><i class="fa-solid fa-key"></i> Cấp lại mật mã</button>' +
+    '<button data-action="t-delete" data-sid="' + esc(sid) + '" class="py-3 rounded-xl bg-slate-800 text-white text-sm font-bold"><i class="fa-solid fa-trash"></i> Xóa tài khoản</button></div>';
+  box.innerHTML = html;
+}
+
+function exportStudentsCsv() {
+  const rows = [['Họ tên', 'Lớp', 'Trạng thái', 'Lần đăng nhập', 'Lượt vào web', 'Tổng điểm', 'Bài hoàn thành', 'Đăng nhập gần nhất', 'Bài học gần nhất']];
+  Object.keys(TD.students).forEach(function(id) {
+    const s = TD.students[id]; const on = studentOnline(id); const last = studentLastLesson(id);
+    rows.push([s.name, s.className, on.on ? 'Online' : 'Offline', s.loginCount || 0, s.visitCount || 0, s.totalPoints || 0, s.completedCount || 0, fmtTime(s.lastLogin), last ? last.subjectName + ' - ' + last.label + ' ' + last.title : '']);
+  });
+  const csv = '﻿' + rows.map(function(r) { return r.map(function(c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = 'danh-sach-sinh-vien.csv';
+  a.click();
+}
+
+function accountsHandleAction(a, el, e) {
+  switch (a) {
+    case 'auth-tab': switchAuthTab(el.getAttribute('data-tab')); return true;
+    case 'do-login': doLogin(); return true;
+    case 'login-pick': doLogin(el.getAttribute('data-sid')); return true;
+    case 'do-register': doRegister(); return true;
+    case 'do-teacher-login': doTeacherLogin(); return true;
+    case 'open-account': openAccountSheet(); return true;
+    case 'logout': doLogout(); return true;
+    case 'go-teacher': closeSheets(); location.hash = '#/gv'; return true;
+    case 't-tab': teacherTab = el.getAttribute('data-tab'); renderTeacher(); return true;
+    case 't-open-student': openStudentSheet(el.getAttribute('data-sid')); return true;
+    case 't-export': exportStudentsCsv(); return true;
+    case 't-override': BE.setOverride(el.getAttribute('data-sid'), el.getAttribute('data-key'), el.getAttribute('data-val') || null).then(function() { showToast('Đã cập nhật quyền học bài.'); }); return true;
+    case 't-global-lock': BE.setGlobalLock(el.getAttribute('data-key'), el.getAttribute('data-on') === '1').then(function() { showToast('Đã cập nhật khóa bài cho cả lớp.'); }); return true;
+    case 't-delete': {
+      const sid = el.getAttribute('data-sid'); const s = TD.students[sid];
+      if (!s || !confirm('Xóa vĩnh viễn tài khoản “' + s.name + ' – lớp ' + s.className + '” cùng toàn bộ điểm và lịch sử học?')) return true;
+      BE.deleteStudent(sid).then(function() { closeSheets(); showToast('Đã xóa tài khoản ' + s.name + '.'); });
+      return true;
+    }
+    case 't-reset-pw': {
+      const sid = el.getAttribute('data-sid'); const s = TD.students[sid];
+      const pw = prompt('Nhập mật mã mới cho ' + (s ? s.name : '') + ' (ít nhất ' + MIN_PW + ' ký tự):');
+      if (pw == null) return true;
+      if (pw.length < MIN_PW) { showToast('Mật mã cần ít nhất ' + MIN_PW + ' ký tự.'); return true; }
+      if (BE.resetStudentPassword) {
+        BE.resetStudentPassword(sid, pw).then(function() { showToast('Đã đặt mật mã mới. Hãy báo cho sinh viên.'); }, function(e) { showToast('Lỗi: ' + e.message); });
+        return true;
+      }
+      const salt = randId(12);
+      BE.patchStudent(sid, { salt: salt, passHash: hashPw(pw, salt) }).then(function() { showToast('Đã đặt mật mã mới. Hãy báo cho sinh viên.'); });
+      return true;
+    }
+  }
+  return false;
+}
+
+// ============================================================================
+// 12. EVENTS
+// ============================================================================
+document.addEventListener('click', function(e) {
+  const el = e.target.closest('[data-action]');
+  if (!el) return;
+  const a = el.getAttribute('data-action');
+  if (accountsHandleAction(a, el, e)) return;
+  switch (a) {
+    case 'open-lesson': goLesson(currentSubject.id, el.getAttribute('data-lesson-id')); break;
+    case 'open-lesson-of': goLesson(el.getAttribute('data-sid'), el.getAttribute('data-lid')); break;
+    case 'open-subject': goSubject(el.getAttribute('data-sid')); break;
+    case 'go-library': closeSheets(); if (ME && ME.role === 'teacher' && currentView === 'library') location.hash = '#/gv'; else goLibrary(); break;
+    case 'pill-home': if (currentSubject) goSubject(currentSubject.id); else goLibrary(); break;
+    case 'nav-back': if (currentView === 'lesson') goSubject(currentSubject.id); else if (ME && ME.role === 'teacher' && currentView === 'library') location.hash = '#/gv'; else goLibrary(); break;
+    case 'open-add-modal': openAddWordModal(); break;
+    case 'close-sheets': closeSheets(); break;
+    case 'save-new-word': saveNewWord(); break;
+    case 'global-weak-quiz':
+      document.getElementById('quizScopeSelect').value = 'global_weak';
+      goLesson(currentSubject.id, (COURSE_DATA.some(function(l) { return l.id === currentLessonId; }) ? currentLessonId : COURSE_DATA[0].id), 'quiz');
+      break;
+    case 'reset-all-progress': resetAllProgress(); break;
+    case 'switch-activity': switchActivity(el.getAttribute('data-activity')); break;
+    case 'vocab-filter': vocabFilter = el.getAttribute('data-filter'); renderVocabList(); break;
+    case 'speak-word': speakChinese(el.getAttribute('data-hanzi')); break;
+    case 'set-status': setWordStatus(el.getAttribute('data-wid'), el.getAttribute('data-status'), true); renderVocabList(); break;
+
+    case 'fc-front-mode': fcFrontMode = el.getAttribute('data-mode'); savePrefs(); fcRevealed = false; fcFlipped = false; renderFlashcard(true); break;
+    case 'fc-toggle-weak': fcWeakOnly = !fcWeakOnly; initFlashcards(false); break;
+    case 'fc-shuffle': initFlashcards(true); showToast("Đã xáo trộn thẻ"); break;
+    case 'fc-toggle-audio': fcAutoAudio = !fcAutoAudio; savePrefs(); updateFcToolbar(); showToast(fcAutoAudio ? "Bật tự phát âm khi lật" : "Tắt tự phát âm"); break;
+    case 'fc-undo': undoFlashcard(); break;
+    case 'fc-speak': e.stopPropagation(); if (fcQueue[0]) speakChinese(fcQueue[0].word.hanzi); break;
+    case 'fc-tap': case 'fc-flip': flipFlashcard(); break;
+    case 'fc-rate': rateFlashcard(el.getAttribute('data-status')); break;
+    case 'fc-start-weak-quiz': document.getElementById('quizScopeSelect').value = 'weak_priority'; switchActivity('quiz'); break;
+    case 'fc-restart': initFlashcards(false); break;
+
+    case 'quiz-init': initQuizSession(); break;
+    case 'quiz-speak': if (currentQuizItem) speakChinese(currentQuizItem.word.hanzi); break;
+    case 'quiz-answer': submitQuizAnswer(el.getAttribute('data-word-id'), el); break;
+    case 'quiz-next': renderNextQuizItem(); window.scrollTo({ top: 0, behavior: 'smooth' }); break;
+
+    case 'toggle-bilingual': toggleBilingual(); break;
+    case 'speak-passage': speakFullPassage(); break;
+    case 'reset-reading-ex': renderReadingExercises(); showToast("Đã làm mới bài tập"); break;
+    case 'token-click': if (CAN_HOVER) { showWordTooltip(el); speakChinese(el.getAttribute('data-hanzi')); } else openWordSheet(el); break;
+    case 'tip-speak': speakChinese(tipText); break;
+    case 'tip-status': if (tipWordId) { setWordStatus(tipWordId, el.getAttribute('data-status'), true); renderTipStatus(); } break;
+    case 'sheet-speak': speakChinese(sheetText); break;
+    case 'sheet-status': if (sheetWordId) { setWordStatus(sheetWordId, el.getAttribute('data-status'), true); renderSheetStatus(); } break;
+    case 'reading-mcq': checkReadingMcq(Number(el.getAttribute('data-q')), Number(el.getAttribute('data-o')), el); break;
+    case 'reading-fill': checkReadingFill(Number(el.getAttribute('data-f')), el.getAttribute('data-opt'), el); break;
+  }
+});
+
+document.getElementById('vocabSearchInput').addEventListener('input', renderVocabList);
+document.getElementById('quizTypeSelect').addEventListener('change', initQuizSession);
+document.getElementById('quizScopeSelect').addEventListener('change', initQuizSession);
+
+document.addEventListener('keydown', function(e) {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (e.key === 'Escape') { closeSheets(); return; }
+  const inLesson = !document.getElementById('lessonView').classList.contains('hidden');
+  if (!inLesson || currentActivity !== 'flashcard') return;
+  if (e.code === 'Space' || e.key === 'Enter' || e.code === 'ArrowUp' || e.code === 'ArrowDown') { e.preventDefault(); flipFlashcard(); }
+  else if (e.key === '1') rateFlashcard('unlearned');
+  else if (e.key === '2') rateFlashcard('medium');
+  else if (e.key === '3') rateFlashcard('mastered');
+  else if (e.key === 'z' || e.key === 'Z') undoFlashcard();
+});
+
+document.getElementById('libSearchInput').addEventListener('input', renderLibrary);
+['tSearch'].forEach(function(id) { document.getElementById(id).addEventListener('input', renderTeacher); });
+['tClassFilter', 'tSort'].forEach(function(id) { document.getElementById(id).addEventListener('change', renderTeacher); });
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Enter' || !e.target.classList || !e.target.classList.contains('auth-input')) return;
+  const form = e.target.closest('[id^="authForm-"]');
+  const btn = form && form.querySelector('.auth-submit');
+  if (btn) { e.preventDefault(); btn.click(); }
+});
+window.addEventListener('hashchange', route);
+
+window.addEventListener('load', function() {
+  document.getElementById('logoBox').textContent = CFG.logoText || '书';
+  document.getElementById('libWatermark').textContent = CFG.logoText || '书';
+  document.title = CFG.siteName;
+  const files = (CFG.subjects || []).filter(function(f) { return f && !(window.ZH_BUNDLED || []).includes(f); });
+  loadScriptsSequential(files).then(function() {
+    const seen = {};
+    SUBJECTS = [];
+    window.ZH_SUBJECTS.forEach(function(raw) {
+      try {
+        if (!raw || !raw.id) { loadErrors.push('Một môn học thiếu "id"'); return; }
+        if (seen[raw.id]) { loadErrors.push('Trùng id môn học: "' + raw.id + '"'); return; }
+        seen[raw.id] = true;
+        SUBJECTS.push(normalizeSubject(raw));
+      } catch (err) { loadErrors.push((raw && raw.id || '?') + ': ' + err.message); }
+    });
+    document.getElementById('authLogo').textContent = CFG.logoText || '书';
+    document.getElementById('authSiteName').textContent = CFG.siteName;
+    switchAuthTab('login');
+    if ((!location.hash || location.hash === '#' || location.hash === '#/') && CFG.defaultSubject && getSubject(CFG.defaultSubject)) location.replace('#/' + CFG.defaultSubject);
+    if (!ACC.requireLogin) { loadState(); route(); return; }
+    BE.init().then(function() {
+      let saved = null;
+      try { saved = JSON.parse(sessionStorage.getItem('zhlib_me') || 'null'); } catch (e) {}
+      if (saved && saved.role === 'student' && saved.sid && BE.resumeStudent) {
+        return BE.resumeStudent(saved.sid).then(function(still) {
+          if (!still) { clearSession(); route(); return; }
+          loadState();
+          return startStudentSession(still, false);
+        });
+      }
+      if (saved && saved.role === 'student' && saved.sid) {
+        return BE.findByName(nameKey(saved.name)).then(function(list) {
+          const still = list.find(function(x) { return x.sid === saved.sid; });
+          if (!still) { clearSession(); route(); return; }
+          loadState();
+          return startStudentSession({ sid: saved.sid, name: still.name, className: still.className }, false);
+        });
+      }
+      if (saved && saved.role === 'teacher') {
+        const t = BE.currentTeacher ? BE.currentTeacher() : { email: saved.email };
+        if (t) { ME = { role: 'teacher', email: t.email, name: 'Giảng viên' }; loadState(); afterLogin(); route(); return; }
+        clearSession();
+      }
+      route();
+    }).catch(function(err) {
+      route();
+      authError('Không kết nối được máy chủ: ' + (err && err.message ? err.message : err));
+    });
+  });
+});
+</script>
+</body>
+</html>
